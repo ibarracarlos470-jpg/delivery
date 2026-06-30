@@ -13,7 +13,9 @@ const OrderSchema = z.object({
     address: z.string(),
     city: z.string(),
   }),
-  paymentMethod: z.enum(['CARD', 'TRANSFER', 'MOBILE_PAY']),
+  paymentMethod: z.enum(['CARD', 'TRANSFER', 'MOBILE_PAY', 'CASH']),
+  zoneId: z.string().optional(),
+  deliveryNote: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
   const parsed = OrderSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
 
-  const { items, shippingAddress, paymentMethod } = parsed.data
+  const { items, shippingAddress, paymentMethod, zoneId, deliveryNote } = parsed.data
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -33,16 +35,28 @@ export async function POST(req: NextRequest) {
     where: { id: { in: items.map(i => i.productId) } },
   })
 
-  const total = items.reduce((acc, item) => {
+  const subtotal = items.reduce((acc, item) => {
     const product = products.find(p => p.id === item.productId)!
     return acc + (product.salePrice ?? product.price) * item.quantity
   }, 0)
 
+  let deliveryFee = 0
+  if (zoneId) {
+    const zone = await prisma.deliveryZone.findUnique({ where: { id: zoneId } })
+    deliveryFee = zone?.deliveryFee ?? 0
+  }
+
+  const total = subtotal + deliveryFee
+
   const order = await prisma.order.create({
     data: {
       userId: user.id,
+      subtotal,
+      deliveryFee,
       total,
       shippingAddress,
+      deliveryNote,
+      zoneId,
       items: {
         create: items.map(item => {
           const product = products.find(p => p.id === item.productId)!
@@ -56,8 +70,11 @@ export async function POST(req: NextRequest) {
       payment: {
         create: { method: paymentMethod, amount: total, status: 'PENDING' },
       },
+      delivery: {
+        create: { status: 'PENDING' },
+      },
     },
-    include: { items: true, payment: true },
+    include: { items: true, payment: true, delivery: true },
   })
 
   return NextResponse.json(order, { status: 201 })
@@ -75,6 +92,8 @@ export async function GET() {
     include: {
       items: { include: { product: { select: { name: true, images: true } } } },
       payment: true,
+      zone: true,
+      delivery: true,
     },
     orderBy: { createdAt: 'desc' },
   })

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { prisma } from '@/lib/prisma'
 import { Package, ShoppingBag, Users, DollarSign } from 'lucide-react'
 

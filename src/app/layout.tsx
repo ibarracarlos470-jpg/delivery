@@ -7,7 +7,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Farmatodo VE - Farmacia Online 24/7',
+  title: 'TuMarca - Farmacia Online 24/7',
   description: 'Tu farmacia online con delivery 24/7 en Venezuela',
 }
 

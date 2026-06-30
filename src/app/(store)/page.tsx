@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import HeroBanner from '@/components/home/HeroBanner'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 

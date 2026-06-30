@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-white font-bold mb-4">FarmaTodo VE</h3>
+            <h3 className="text-white font-bold mb-4">TuMarca</h3>
             <p className="text-sm">Tu farmacia online de confianza. Delivery 24/7 en Venezuela.</p>
           </div>
           <div>
@@ -36,7 +36,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm">
-          <p>© 2026 FarmaTodo VE. Todos los derechos reservados.</p>
+          <p>© 2026 TuMarca. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

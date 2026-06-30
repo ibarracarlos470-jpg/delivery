@@ -1,20 +1,38 @@
 'use client'
 import Link from 'next/link'
-import { Search, ShoppingCart, MapPin } from 'lucide-react'
+import { Search, ShoppingCart, MapPin, Package, User } from 'lucide-react'
 import { UserButton, SignInButton, useUser } from '@clerk/nextjs'
 import { useCartStore } from '@/store/cart'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { isSignedIn } = useUser()
   const { items } = useCartStore()
   const [query, setQuery] = useState('')
+  const [cityName, setCityName] = useState('Detectando...')
   const router = useRouter()
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+
+  useEffect(() => {
+    if (!navigator.geolocation) { setCityName('Mi ubicación'); return }
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`
+          )
+          const data = await res.json()
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || 'Mi ubicación'
+          setCityName(city)
+        } catch { setCityName('Mi ubicación') }
+      },
+      () => setCityName('Mi ubicación')
+    )
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,12 +44,12 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-2xl font-bold text-white shrink-0">
-            FarmaTodo
+            TuMarca
           </Link>
 
           <button className="hidden md:flex items-center gap-1 text-sm text-green-100 shrink-0">
             <MapPin size={16} />
-            Caracas
+            {cityName}
           </button>
 
           <form onSubmit={handleSearch} className="flex-1 flex gap-2 max-w-xl">
@@ -48,7 +66,17 @@ export default function Header() {
 
           <div className="flex items-center gap-3 ml-auto shrink-0">
             {isSignedIn ? (
-              <UserButton />
+              <>
+                <Link href="/pedidos" className="hidden md:flex items-center gap-1 text-sm text-green-100 hover:text-white">
+                  <Package size={16} />
+                  Pedidos
+                </Link>
+                <Link href="/perfil" className="hidden md:flex items-center gap-1 text-sm text-green-100 hover:text-white">
+                  <User size={16} />
+                  Perfil
+                </Link>
+                <UserButton />
+              </>
             ) : (
               <SignInButton mode="modal">
                 <Button variant="outline" size="sm" className="border-white text-white hover:bg-green-700">

@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="w-64 bg-gray-900 text-white flex flex-col shrink-0">
         <div className="p-6 border-b border-gray-700">
           <h1 className="text-xl font-bold">Admin Panel</h1>
-          <p className="text-xs text-gray-400 mt-1">FarmaTodo VE</p>
+          <p className="text-xs text-gray-400 mt-1">TuMarca</p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {[
