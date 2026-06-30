@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #00873d;
+  --color-primary-dark: #006830;
+  --color-secondary: #ffd700;
+}
+
+* {
+  box-sizing: border-box;
+}
