@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { LayoutDashboard, Package, ShoppingBag, Users } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Users, MapPin } from 'lucide-react'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
@@ -23,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
             { href: '/admin/productos', icon: Package, label: 'Productos' },
             { href: '/admin/pedidos', icon: ShoppingBag, label: 'Pedidos' },
+            { href: '/admin/zonas', icon: MapPin, label: 'Zonas delivery' },
             { href: '/admin/usuarios', icon: Users, label: 'Usuarios' },
           ].map(item => (
             <Link
