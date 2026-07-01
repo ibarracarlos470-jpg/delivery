@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCartStore } from '@/store/cart'
 import { toast } from 'sonner'
+import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
 
 type Product = {
   id: string
@@ -20,6 +21,7 @@ type Product = {
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore()
+  const { rate } = useExchangeRate()
   const hasDiscount = product.salePrice !== null && product.salePrice < product.price
   const discountPct = hasDiscount
     ? Math.round((1 - product.salePrice! / product.price) * 100)
@@ -73,10 +75,14 @@ export default function ProductCard({ product }: { product: Product }) {
             {hasDiscount ? (
               <>
                 <p className="text-lg font-bold text-green-700">${product.salePrice!.toFixed(2)}</p>
+                {rate > 0 && <p className="text-xs text-blue-500">{formatBs(product.salePrice!, rate)}</p>}
                 <p className="text-xs text-gray-400 line-through">${product.price.toFixed(2)}</p>
               </>
             ) : (
-              <p className="text-lg font-bold text-green-700">${product.price.toFixed(2)}</p>
+              <>
+                <p className="text-lg font-bold text-green-700">${product.price.toFixed(2)}</p>
+                {rate > 0 && <p className="text-xs text-blue-500">{formatBs(product.price, rate)}</p>}
+              </>
             )}
           </div>
 

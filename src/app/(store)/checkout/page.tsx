@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUser } from '@clerk/nextjs'
 import { MapPin, CreditCard, Banknote, Smartphone, AlertCircle, Navigation, Loader2 } from 'lucide-react'
+import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
 
 const PAYMENT_METHODS = [
   { value: 'CASH',       label: 'Efectivo',     icon: Banknote },
@@ -29,6 +30,7 @@ export default function CheckoutPage() {
   const [locating, setLocating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' })
+  const { rate } = useExchangeRate()
   const [hydrated, setHydrated] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -235,16 +237,28 @@ export default function CheckoutPage() {
               <div className="border-t pt-3 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <div className="text-right">
+                    <p>${subtotal.toFixed(2)}</p>
+                    {rate > 0 && <p className="text-xs text-blue-500">{formatBs(subtotal, rate)}</p>}
+                  </div>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery</span>
-                  <span>${DELIVERY_FEE.toFixed(2)}</span>
+                  <div className="text-right">
+                    <p>${DELIVERY_FEE.toFixed(2)}</p>
+                    {rate > 0 && <p className="text-xs text-blue-500">{formatBs(DELIVERY_FEE, rate)}</p>}
+                  </div>
                 </div>
                 <div className="flex justify-between font-bold text-base border-t pt-2">
                   <span>Total</span>
-                  <span className="text-green-700">${grandTotal.toFixed(2)}</span>
+                  <div className="text-right">
+                    <p className="text-green-700">${grandTotal.toFixed(2)}</p>
+                    {rate > 0 && <p className="text-xs text-blue-500 font-normal">{formatBs(grandTotal, rate)}</p>}
+                  </div>
                 </div>
+                {rate > 0 && (
+                  <p className="text-xs text-gray-400 text-center pt-1">Tasa BCV: Bs {rate.toFixed(2)} / $</p>
+                )}
               </div>
             </div>
 

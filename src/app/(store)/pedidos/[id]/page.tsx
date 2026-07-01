@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
 import { toast } from 'sonner'
+import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
 
 type OrderDetail = {
   id: string
@@ -60,6 +61,7 @@ const STATUS_MESSAGES: Record<string, string> = {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { user } = useUser()
+  const { rate } = useExchangeRate()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const prevStatusRef = useRef<string | null>(null)
@@ -252,15 +254,29 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <h2 className="font-semibold mb-3 text-gray-700">Resumen de pago</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-gray-500">
-            <span>Subtotal</span><span>${order.subtotal.toFixed(2)}</span>
+            <span>Subtotal</span>
+            <div className="text-right">
+              <p>${order.subtotal.toFixed(2)}</p>
+              {rate > 0 && <p className="text-xs text-blue-500">{formatBs(order.subtotal, rate)}</p>}
+            </div>
           </div>
           <div className="flex justify-between text-gray-500">
-            <span>Delivery</span><span>${order.deliveryFee.toFixed(2)}</span>
+            <span>Delivery</span>
+            <div className="text-right">
+              <p>${order.deliveryFee.toFixed(2)}</p>
+              {rate > 0 && <p className="text-xs text-blue-500">{formatBs(order.deliveryFee, rate)}</p>}
+            </div>
           </div>
           <div className="flex justify-between font-bold text-base border-t pt-2">
             <span>Total</span>
-            <span className="text-green-700">${order.total.toFixed(2)}</span>
+            <div className="text-right">
+              <p className="text-green-700">${order.total.toFixed(2)}</p>
+              {rate > 0 && <p className="text-xs text-blue-500 font-normal">{formatBs(order.total, rate)}</p>}
+            </div>
           </div>
+          {rate > 0 && (
+            <p className="text-xs text-gray-400 text-center pt-1">Tasa BCV: Bs {rate.toFixed(2)} / $</p>
+          )}
           {order.payment && (
             <div className="flex justify-between text-gray-400 text-xs pt-1">
               <span>Método</span>
