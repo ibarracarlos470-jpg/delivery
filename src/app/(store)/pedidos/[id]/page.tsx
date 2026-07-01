@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, useRef, use } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Package, CheckCircle, Clock, Truck, MapPin, User, Phone, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
+import { toast } from 'sonner'
 
 type OrderDetail = {
   id: string
@@ -48,25 +49,57 @@ const PAYMENT_LABEL: Record<string, string> = {
   CASH: 'Efectivo', MOBILE_PAY: 'Pago Móvil', TRANSFER: 'Transferencia', CARD: 'Tarjeta',
 }
 
+const STATUS_MESSAGES: Record<string, string> = {
+  CONFIRMED:  '✅ Pedido recibido y confirmado',
+  PREPARING:  '📦 Tu pedido está siendo preparado',
+  ON_THE_WAY: '🛵 ¡Tu repartidor está en camino!',
+  DELIVERED:  '🎉 ¡Pedido entregado! Gracias por tu compra',
+  CANCELLED:  '❌ Pedido cancelado',
+}
+
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { user } = useUser()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const prevStatusRef = useRef<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/orders/${id}`)
-      .then(r => r.json())
-      .then(setOrder)
-      .finally(() => setLoading(false))
+    async function fetchOrder(initial = false) {
+      try {
+        const res = await fetch(`/api/orders/${id}`)
+        const o: OrderDetail = await res.json()
+        const newStatus = o.delivery?.status ?? o.status
 
-    // Poll while in-progress
-    const interval = setInterval(() => {
-      fetch(`/api/orders/${id}`).then(r => r.json()).then((o: OrderDetail) => {
+        if (!initial && prevStatusRef.current && prevStatusRef.current !== newStatus) {
+          const msg = STATUS_MESSAGES[newStatus]
+          if (msg) toast(msg, { duration: 5000 })
+        }
+        prevStatusRef.current = newStatus
         setOrder(o)
-        if (o.status === 'DELIVERED' || o.status === 'CANCELLED') clearInterval(interval)
-      })
-    }, 30000)
+      } finally {
+        if (initial) setLoading(false)
+      }
+    }
+
+    fetchOrder(true)
+
+    // Poll every 5s while active, stop when done
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/orders/${id}`)
+      const o: OrderDetail = await res.json()
+      const newStatus = o.delivery?.status ?? o.status
+
+      if (prevStatusRef.current && prevStatusRef.current !== newStatus) {
+        const msg = STATUS_MESSAGES[newStatus]
+        if (msg) toast(msg, { duration: 6000 })
+      }
+      prevStatusRef.current = newStatus
+      setOrder(o)
+
+      if (newStatus === 'DELIVERED' || newStatus === 'CANCELLED') clearInterval(interval)
+    }, 5000)
+
     return () => clearInterval(interval)
   }, [id])
 
