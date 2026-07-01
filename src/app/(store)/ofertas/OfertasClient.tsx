@@ -2,7 +2,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag, Flame, SlidersHorizontal, ShoppingCart } from 'lucide-react'
+import { Tag, Flame, SlidersHorizontal, ShoppingCart, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/store/cart'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ type Product = {
   discountPct: number
   brand: { name: string } | null
   category: { name: string; slug: string }
+  branch?: { city: string; name: string } | null
 }
 
 type Category = { name: string; slug: string }
@@ -165,9 +166,16 @@ export default function OfertasClient({
                 </Link>
 
                 <div className="p-3 flex flex-col flex-1">
-                  {p.brand && (
-                    <p className="text-xs text-gray-400 mb-0.5">{p.brand.name}</p>
-                  )}
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    {p.brand && (
+                      <p className="text-xs text-gray-400 truncate">{p.brand.name}</p>
+                    )}
+                    {p.branch && (
+                      <span className="shrink-0 flex items-center gap-0.5 text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full font-medium">
+                        <MapPin size={9} />{p.branch.city}
+                      </span>
+                    )}
+                  </div>
                   <Link href={`/producto/${p.slug}`}
                     className="text-sm font-medium text-gray-800 hover:text-red-600 line-clamp-2 flex-1 leading-tight">
                     {p.name}

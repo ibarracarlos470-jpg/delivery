@@ -11,7 +11,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   const products = await prisma.product.findMany({
     where: { categoryId: category.id, active: true },
-    include: { brand: { select: { name: true } } },
+    include: { brand: { select: { name: true } }, branch: { select: { city: true, name: true } } },
     orderBy: { createdAt: 'desc' },
   })
 

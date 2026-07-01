@@ -19,6 +19,7 @@ export default async function OfertasPage({
     include: {
       brand: { select: { name: true } },
       category: { select: { name: true, slug: true } },
+      branch: { select: { city: true, name: true } },
     },
   })
 
