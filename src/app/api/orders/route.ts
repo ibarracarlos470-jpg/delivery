@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
   const order = await prisma.order.create({
     data: {
       userId: user.id,
+      status: 'CONFIRMED',
       subtotal,
       deliveryFee,
       total,
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
         create: { method: paymentMethod, amount: total, status: 'PENDING' },
       },
       delivery: {
-        create: { status: 'PENDING' },
+        create: { status: 'CONFIRMED', confirmedAt: new Date() },
       },
     },
     include: { items: true, payment: true, delivery: true },

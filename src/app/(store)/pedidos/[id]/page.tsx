@@ -34,14 +34,13 @@ type OrderDetail = {
 }
 
 const STEPS = [
-  { key: 'PENDING',    label: 'Pedido recibido',  icon: Package },
-  { key: 'CONFIRMED',  label: 'Confirmado',        icon: CheckCircle },
-  { key: 'PREPARING',  label: 'Preparando',        icon: Clock },
-  { key: 'ON_THE_WAY', label: 'En camino',         icon: Truck },
-  { key: 'DELIVERED',  label: 'Entregado',         icon: CheckCircle },
+  { key: 'CONFIRMED',  label: 'Pedido recibido', icon: Package },
+  { key: 'PREPARING',  label: 'Preparando',       icon: Clock },
+  { key: 'ON_THE_WAY', label: 'En camino',        icon: Truck },
+  { key: 'DELIVERED',  label: 'Entregado',        icon: CheckCircle },
 ]
 
-const STATUS_ORDER = ['PENDING', 'CONFIRMED', 'PREPARING', 'ON_THE_WAY', 'DELIVERED']
+const STATUS_ORDER = ['CONFIRMED', 'PREPARING', 'ON_THE_WAY', 'DELIVERED']
 
 const PAYMENT_LABEL: Record<string, string> = {
   CASH: 'Efectivo', MOBILE_PAY: 'Pago Móvil', TRANSFER: 'Transferencia', CARD: 'Tarjeta',
