@@ -60,28 +60,45 @@ export default function CheckoutPage() {
   }, [user])
 
   function detectLocation() {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      setError('Tu navegador no soporta geolocalización.')
+      return
+    }
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`
+            `/api/geocode?lat=${coords.latitude}&lon=${coords.longitude}`
           )
+          if (!res.ok) throw new Error('No se pudo obtener la dirección')
           const data = await res.json()
-          const addr = data.address
+          if (data.error) throw new Error(data.error)
+          const addr = data.address ?? {}
           const street = [addr.road, addr.house_number].filter(Boolean).join(' ')
           const city = addr.city || addr.town || addr.village || addr.county || ''
-          const suburb = addr.suburb || addr.neighbourhood || ''
+          const suburb = addr.suburb || addr.neighbourhood || addr.quarter || ''
+          const fullAddress = [street, suburb].filter(Boolean).join(', ')
           setForm(f => ({
             ...f,
-            address: [street, suburb].filter(Boolean).join(', ') || f.address,
+            address: fullAddress || f.address,
             city: city || f.city,
           }))
-        } catch { /* silently fail */ }
+          if (!fullAddress && !city) {
+            setError('Ubicación detectada pero no se pudo obtener la dirección. Ingrésala manualmente.')
+          }
+        } catch (e) {
+          setError(`No se pudo obtener tu ubicación: ${e instanceof Error ? e.message : 'intenta de nuevo'}`)
+        }
         setLocating(false)
       },
-      () => setLocating(false)
+      (err) => {
+        setLocating(false)
+        if (err.code === 1) setError('Permiso de ubicación denegado. Actívalo en tu navegador.')
+        else if (err.code === 2) setError('No se pudo detectar tu ubicación. Ingrésala manualmente.')
+        else setError('Tiempo de espera agotado. Intenta de nuevo.')
+      },
+      { timeout: 10000, maximumAge: 60000 }
     )
   }
 
