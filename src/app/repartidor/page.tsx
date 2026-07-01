@@ -189,7 +189,7 @@ export default function DriverDashboard() {
             <div className="bg-white rounded-2xl p-8 text-center">
               <Clock size={40} className="text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">Sin pedidos por ahora</p>
-              <p className="text-sm text-gray-400 mt-1">Se actualiza automáticamente cada 30s</p>
+              <p className="text-sm text-gray-400 mt-1">Se actualiza automáticamente cada 5s</p>
             </div>
           )}
 
