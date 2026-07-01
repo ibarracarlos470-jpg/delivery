@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useExchangeRate } from '@/contexts/ExchangeRateContext'
+import BranchSelector from '@/components/store/BranchSelector'
 
 export default function Header() {
   const { isSignedIn } = useUser()
@@ -64,6 +65,11 @@ export default function Header() {
             <Link href="/" className="text-xl sm:text-2xl font-bold text-white shrink-0">
               TuMarca
             </Link>
+
+            {/* Branch selector */}
+            <div className="hidden md:block shrink-0">
+              <BranchSelector />
+            </div>
 
             {/* City — desktop only */}
             <button className="hidden md:flex items-center gap-1 text-sm text-green-100 shrink-0">

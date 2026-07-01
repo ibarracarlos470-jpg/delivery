@@ -15,6 +15,7 @@ const OrderSchema = z.object({
   }),
   paymentMethod: z.enum(['CARD', 'TRANSFER', 'MOBILE_PAY', 'CASH']),
   zoneId: z.string().optional(),
+  branchId: z.string().optional(),
   deliveryNote: z.string().optional(),
 })
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   const parsed = OrderSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
 
-  const { items, shippingAddress, paymentMethod, zoneId, deliveryNote } = parsed.data
+  const { items, shippingAddress, paymentMethod, zoneId, branchId, deliveryNote } = parsed.data
 
   let user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
       shippingAddress,
       deliveryNote,
       zoneId,
+      branchId: branchId ?? null,
       items: {
         create: items.map(item => {
           const product = products.find(p => p.id === item.productId)!

@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const VALID_ROLES = ['ADMIN', 'DRIVER', 'CUSTOMER'] as const
+const VALID_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DRIVER', 'CUSTOMER'] as const
 
 export async function POST(req: Request) {
   const { userId } = await auth()

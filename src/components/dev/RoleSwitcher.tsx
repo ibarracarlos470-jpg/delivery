@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Truck, ShieldCheck, User, ChevronUp, Loader2 } from 'lucide-react'
 
 const ROLES = [
-  { value: 'ADMIN',    label: 'Admin',      icon: ShieldCheck, color: 'text-purple-600', bg: 'bg-purple-100 hover:bg-purple-200', badge: 'bg-purple-600' },
-  { value: 'DRIVER',   label: 'Repartidor', icon: Truck,       color: 'text-orange-600', bg: 'bg-orange-100 hover:bg-orange-200', badge: 'bg-orange-500' },
-  { value: 'CUSTOMER', label: 'Cliente',    icon: User,        color: 'text-green-600',  bg: 'bg-green-100  hover:bg-green-200',  badge: 'bg-green-600'  },
+  { value: 'SUPER_ADMIN', label: 'Super Admin', icon: ShieldCheck, color: 'text-violet-600', bg: 'bg-violet-100 hover:bg-violet-200', badge: 'bg-violet-700' },
+  { value: 'ADMIN',       label: 'Admin Sede',  icon: ShieldCheck, color: 'text-purple-600', bg: 'bg-purple-100 hover:bg-purple-200', badge: 'bg-purple-600' },
+  { value: 'DRIVER',      label: 'Repartidor',  icon: Truck,       color: 'text-orange-600', bg: 'bg-orange-100 hover:bg-orange-200', badge: 'bg-orange-500' },
+  { value: 'CUSTOMER',    label: 'Cliente',     icon: User,        color: 'text-green-600',  bg: 'bg-green-100  hover:bg-green-200',  badge: 'bg-green-600'  },
 ]
 
 const ROLE_REDIRECTS: Record<string, string> = {
-  ADMIN:    '/admin',
-  DRIVER:   '/repartidor',
-  CUSTOMER: '/',
+  SUPER_ADMIN: '/super-admin',
+  ADMIN:       '/admin',
+  DRIVER:      '/repartidor',
+  CUSTOMER:    '/',
 }
 
 export default function RoleSwitcher() {

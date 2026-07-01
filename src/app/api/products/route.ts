@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -9,11 +10,16 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') ?? '20')
   const page = parseInt(searchParams.get('page') ?? '1')
 
+  // Branch filter: query param > cookie > all
+  const cookieStore = await cookies()
+  const branchId = searchParams.get('branch') ?? cookieStore.get('tmb')?.value ?? null
+
   const where = {
     active: true,
     ...(category && { category: { slug: category } }),
     ...(search && { name: { contains: search, mode: 'insensitive' as const } }),
     ...(featured === 'true' && { featured: true }),
+    ...(branchId && { OR: [{ branchId }, { branchId: null }] }),
   }
 
   const [products, total] = await Promise.all([
