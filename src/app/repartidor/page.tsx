@@ -142,12 +142,12 @@ export default function DriverDashboard() {
             </div>
 
             {/* Action button */}
-            {active.delivery?.status !== 'ON_THE_WAY' ? (
+            {active.delivery?.status === 'PREPARING' ? (
               <Button onClick={() => doAction(active.id, 'pickup')}
                 disabled={acting === active.id + 'pickup'}
                 className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-base gap-2">
                 <Truck size={18} />
-                {acting === active.id + 'pickup' ? 'Procesando...' : 'Ya recogí el pedido'}
+                {acting === active.id + 'pickup' ? 'Procesando...' : 'Salir a entregar'}
               </Button>
             ) : (
               <Button onClick={() => doAction(active.id, 'deliver')}

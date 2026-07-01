@@ -36,9 +36,15 @@ export async function POST(
       return NextResponse.json({ error: 'Ya tiene repartidor asignado' }, { status: 409 })
     }
     await prisma.$transaction([
+      prisma.order.update({ where: { id }, data: { status: 'PREPARING' } }),
       prisma.delivery.update({
         where: { orderId: id },
-        data: { driverId: user.id, ...(driverNote ? { driverNote } : {}) },
+        data: {
+          driverId: user.id,
+          status: 'PREPARING',
+          preparedAt: now,
+          ...(driverNote ? { driverNote } : {}),
+        },
       }),
     ])
   }
