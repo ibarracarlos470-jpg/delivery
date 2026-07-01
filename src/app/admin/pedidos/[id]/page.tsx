@@ -3,8 +3,26 @@ export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
-import { MapPin, Phone, User, Truck, Clock } from 'lucide-react'
+import { MapPin, User, Truck, Clock, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react'
 import AdminOrderActions from './AdminOrderActions'
+
+const METHOD_LABEL: Record<string, string> = {
+  CASH: 'Efectivo',
+  MOBILE_PAY: 'Pago Móvil',
+  ZELLE: 'Zelle',
+  BINANCE: 'Binance Pay',
+  TRANSFER: 'Transferencia',
+  CARD: 'Tarjeta',
+}
+
+const METHOD_COLOR: Record<string, string> = {
+  CASH: 'bg-green-100 text-green-800',
+  MOBILE_PAY: 'bg-orange-100 text-orange-800',
+  ZELLE: 'bg-blue-100 text-blue-800',
+  BINANCE: 'bg-yellow-100 text-yellow-800',
+  TRANSFER: 'bg-gray-100 text-gray-800',
+  CARD: 'bg-purple-100 text-purple-800',
+}
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,6 +45,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
   const deliveryStatus = order.delivery?.status ?? order.status
   const addr = order.shippingAddress as { name: string; phone: string; address: string; city: string }
+  const payment = order.payment as (typeof order.payment & { proofUrl?: string | null; paidAt?: Date | null }) | null
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -46,6 +65,82 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         currentDriverId={order.delivery?.driverId ?? null}
         drivers={drivers}
       />
+
+      {/* Payment verification */}
+      {payment && payment.method !== 'CASH' && (
+        <div className={`rounded-xl border p-5 ${
+          payment.status === 'PAID'
+            ? 'bg-green-50 border-green-200'
+            : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <CreditCard size={16} />
+              Pago — {METHOD_LABEL[payment.method] ?? payment.method}
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${METHOD_COLOR[payment.method] ?? 'bg-gray-100 text-gray-700'}`}>
+                {METHOD_LABEL[payment.method] ?? payment.method}
+              </span>
+              {payment.status === 'PAID' ? (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800 flex items-center gap-1">
+                  <CheckCircle size={11} /> Pago verificado
+                </span>
+              ) : (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
+                  <AlertTriangle size={11} /> Pendiente de verificar
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Monto</span>
+              <span className="font-semibold">${payment.amount.toFixed(2)}</span>
+            </div>
+            {payment.reference && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Referencia</span>
+                <span className="font-mono font-semibold">{payment.reference}</span>
+              </div>
+            )}
+            {payment.paidAt && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Verificado</span>
+                <span className="text-green-700 font-medium">
+                  {new Date(payment.paidAt).toLocaleString('es-VE')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {payment.proofUrl && (
+            <div className="mt-4">
+              <p className="text-xs text-gray-500 mb-2">Comprobante enviado por el cliente:</p>
+              <a href={payment.proofUrl} target="_blank" rel="noopener noreferrer"
+                className="block relative w-full max-w-xs rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity">
+                <Image
+                  src={payment.proofUrl}
+                  alt="Comprobante de pago"
+                  width={400}
+                  height={300}
+                  className="object-contain bg-gray-50"
+                />
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                  Ver completo ↗
+                </div>
+              </a>
+            </div>
+          )}
+
+          {payment.status === 'PENDING' && (
+            <p className="text-xs text-amber-700 mt-3 border-t border-amber-200 pt-3">
+              Al hacer clic en <strong>&quot;Confirmar pedido&quot;</strong> arriba, el pago se marcará como verificado y el pedido pasará a preparación.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Client & address */}
       <div className="bg-white rounded-xl border p-5 grid sm:grid-cols-2 gap-5">

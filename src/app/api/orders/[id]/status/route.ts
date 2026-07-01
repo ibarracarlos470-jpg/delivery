@@ -17,7 +17,7 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'DRIVER')) {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'DRIVER' && user.role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -35,11 +35,8 @@ export async function PATCH(
   if (status === 'ON_THE_WAY') deliveryTimestamps.pickedUpAt = now
   if (status === 'DELIVERED') deliveryTimestamps.deliveredAt = now
 
-  const [order] = await prisma.$transaction([
-    prisma.order.update({
-      where: { id },
-      data: { status },
-    }),
+  const ops: Parameters<typeof prisma.$transaction>[0] = [
+    prisma.order.update({ where: { id }, data: { status } }),
     prisma.delivery.update({
       where: { orderId: id },
       data: {
@@ -49,7 +46,19 @@ export async function PATCH(
         ...(driverNote ? { driverNote } : {}),
       },
     }),
-  ])
+  ]
+
+  // When admin confirms a pending order, mark the payment as paid
+  if (status === 'CONFIRMED') {
+    ops.push(
+      prisma.payment.updateMany({
+        where: { orderId: id, status: 'PENDING' },
+        data: { status: 'PAID', paidAt: now },
+      }) as never
+    )
+  }
+
+  const [order] = await prisma.$transaction(ops)
 
   return NextResponse.json(order)
 }

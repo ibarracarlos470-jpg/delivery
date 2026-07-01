@@ -50,6 +50,8 @@ enum PaymentMethod {
   TRANSFER
   MOBILE_PAY
   CASH
+  ZELLE
+  BINANCE
 }
 
 enum PaymentStatus {
@@ -218,6 +220,8 @@ model Payment {
   amount    Float
   status    PaymentStatus @default(PENDING)
   reference String?
+  proofUrl  String?
+  paidAt    DateTime?
   createdAt DateTime      @default(now())
 
   order Order @relation(fields: [orderId], references: [id])

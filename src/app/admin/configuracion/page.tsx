@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Banknote, Smartphone, Save, Loader2 } from 'lucide-react'
+import { Banknote, Smartphone, Save, Loader2, DollarSign, Wallet } from 'lucide-react'
 
 type Settings = Record<string, string>
 
@@ -53,6 +53,92 @@ export default function PaymentConfigPage() {
       <h1 className="text-2xl font-bold mb-6">Configuración de Pagos</h1>
 
       <form onSubmit={handleSave} className="space-y-6">
+
+        {/* Pago Móvil */}
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Smartphone size={20} className="text-orange-500" />
+            Pago Móvil (Bolívares)
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Teléfono</Label>
+              <Input
+                value={settings.mobile_phone ?? ''}
+                onChange={e => set('mobile_phone', e.target.value)}
+                placeholder="0412-0000000"
+              />
+            </div>
+            <div>
+              <Label>Banco</Label>
+              <Input
+                value={settings.mobile_bank ?? ''}
+                onChange={e => set('mobile_bank', e.target.value)}
+                placeholder="Ej: Banesco, BDV..."
+              />
+            </div>
+            <div>
+              <Label>Cédula del titular</Label>
+              <Input
+                value={settings.mobile_id ?? ''}
+                onChange={e => set('mobile_id', e.target.value)}
+                placeholder="V-00000000"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Zelle */}
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <DollarSign size={20} className="text-blue-500" />
+            Zelle (USD)
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Email o teléfono Zelle</Label>
+              <Input
+                value={settings.zelle_email ?? ''}
+                onChange={e => set('zelle_email', e.target.value)}
+                placeholder="tucorreo@gmail.com o +1 305..."
+              />
+            </div>
+            <div>
+              <Label>Nombre del titular</Label>
+              <Input
+                value={settings.zelle_name ?? ''}
+                onChange={e => set('zelle_name', e.target.value)}
+                placeholder="Nombre Apellido"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Binance */}
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Wallet size={20} className="text-yellow-500" />
+            Binance Pay (USDT)
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Binance Pay ID</Label>
+              <Input
+                value={settings.binance_id ?? ''}
+                onChange={e => set('binance_id', e.target.value)}
+                placeholder="Ej: 12345678"
+              />
+            </div>
+            <div>
+              <Label>Wallet USDT (TRC20)</Label>
+              <Input
+                value={settings.binance_wallet ?? ''}
+                onChange={e => set('binance_wallet', e.target.value)}
+                placeholder="TRC20: T..."
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Transferencia Bancaria */}
         <div className="bg-white rounded-xl border p-6">
@@ -103,40 +189,6 @@ export default function PaymentConfigPage() {
                 value={settings.transfer_rif ?? ''}
                 onChange={e => set('transfer_rif', e.target.value)}
                 placeholder="J-00000000-0 o V-00000000"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Pago Móvil */}
-        <div className="bg-white rounded-xl border p-6">
-          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Smartphone size={20} className="text-green-600" />
-            Pago Móvil
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>Teléfono</Label>
-              <Input
-                value={settings.mobile_phone ?? ''}
-                onChange={e => set('mobile_phone', e.target.value)}
-                placeholder="0412-0000000"
-              />
-            </div>
-            <div>
-              <Label>Banco</Label>
-              <Input
-                value={settings.mobile_bank ?? ''}
-                onChange={e => set('mobile_bank', e.target.value)}
-                placeholder="Ej: Banesco, BDV..."
-              />
-            </div>
-            <div>
-              <Label>Cédula del titular</Label>
-              <Input
-                value={settings.mobile_id ?? ''}
-                onChange={e => set('mobile_id', e.target.value)}
-                placeholder="V-00000000"
               />
             </div>
           </div>

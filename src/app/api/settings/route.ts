@@ -11,6 +11,10 @@ const PAYMENT_KEYS = [
   'mobile_phone',
   'mobile_bank',
   'mobile_id',
+  'zelle_email',
+  'zelle_name',
+  'binance_id',
+  'binance_wallet',
 ]
 
 export const dynamic = 'force-dynamic'

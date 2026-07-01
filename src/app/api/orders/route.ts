@@ -3,6 +3,8 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
+const INSTANT_CONFIRM = new Set(['CASH'])
+
 const OrderSchema = z.object({
   items: z.array(
     z.object({ productId: z.string(), quantity: z.number().int().positive() })
@@ -13,7 +15,9 @@ const OrderSchema = z.object({
     address: z.string(),
     city: z.string(),
   }),
-  paymentMethod: z.enum(['CARD', 'TRANSFER', 'MOBILE_PAY', 'CASH']),
+  paymentMethod: z.enum(['CARD', 'TRANSFER', 'MOBILE_PAY', 'CASH', 'ZELLE', 'BINANCE']),
+  reference: z.string().optional(),
+  proofUrl: z.string().optional(),
   zoneId: z.string().optional(),
   branchId: z.string().optional(),
   deliveryNote: z.string().optional(),
@@ -27,7 +31,7 @@ export async function POST(req: NextRequest) {
   const parsed = OrderSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
 
-  const { items, shippingAddress, paymentMethod, zoneId, branchId, deliveryNote } = parsed.data
+  const { items, shippingAddress, paymentMethod, reference, proofUrl, zoneId, branchId, deliveryNote } = parsed.data
 
   let user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) {
@@ -61,10 +65,15 @@ export async function POST(req: NextRequest) {
 
   const total = subtotal + deliveryFee
 
+  // Cash orders confirm immediately; all others wait for payment verification
+  const isCash = INSTANT_CONFIRM.has(paymentMethod)
+  const orderStatus = isCash ? 'CONFIRMED' : 'PENDING'
+  const deliveryStatus = isCash ? 'CONFIRMED' : 'PENDING'
+
   const order = await prisma.order.create({
     data: {
       userId: user.id,
-      status: 'CONFIRMED',
+      status: orderStatus,
       subtotal,
       deliveryFee,
       total,
@@ -83,10 +92,19 @@ export async function POST(req: NextRequest) {
         }),
       },
       payment: {
-        create: { method: paymentMethod, amount: total, status: 'PENDING' },
+        create: {
+          method: paymentMethod,
+          amount: total,
+          status: 'PENDING',
+          reference: reference ?? null,
+          proofUrl: proofUrl ?? null,
+        },
       },
       delivery: {
-        create: { status: 'CONFIRMED', confirmedAt: new Date() },
+        create: {
+          status: deliveryStatus,
+          ...(isCash ? { confirmedAt: new Date() } : {}),
+        },
       },
     },
     include: { items: true, payment: true, delivery: true },
