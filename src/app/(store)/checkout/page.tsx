@@ -106,17 +106,21 @@ export default function CheckoutPage() {
         }),
       })
 
-      const data = await res.json()
+      // Read body as text first to avoid json parse errors masking the real issue
+      const text = await res.text()
+      let data: Record<string, unknown> = {}
+      try { data = JSON.parse(text) } catch { data = { error: text.slice(0, 200) } }
+
       if (!res.ok) {
-        setError(typeof data.error === 'string' ? data.error : 'Error al crear el pedido.')
+        setError(typeof data.error === 'string' ? data.error : `Error ${res.status}: ${text.slice(0, 150)}`)
         return
       }
 
       setSubmitted(true)
       clearCart()
-      router.push(`/pedidos/${data.id}`)
-    } catch {
-      setError('Error de conexión. Verifica tu internet e intenta de nuevo.')
+      router.push(`/pedidos/${data.id as string}`)
+    } catch (err) {
+      setError(`Error de red: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }

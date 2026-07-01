@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { MapPin, Phone, Package, Clock, CheckCircle, Truck, RefreshCw, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { useUser } from '@clerk/nextjs'
+import OrderChat from '@/components/chat/OrderChat'
 
 type OrderItem = { quantity: number; product: { name: string } }
 type Zone = { name: string; estimatedMin: number; estimatedMax: number } | null
@@ -35,6 +37,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default function DriverDashboard() {
+  const { user } = useUser()
   const [available, setAvailable] = useState<Order[]>([])
   const [active, setActive] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
@@ -86,6 +89,7 @@ export default function DriverDashboard() {
   }
 
   return (
+    <>
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">Mis Pedidos</h1>
@@ -230,5 +234,14 @@ export default function DriverDashboard() {
         </div>
       </div>
     </div>
+
+    {active && !['DELIVERED', 'CANCELLED'].includes(active.delivery?.status ?? '') && (
+      <OrderChat
+        orderId={active.id}
+        myRole="DRIVER"
+        myName={user?.fullName ?? 'Repartidor'}
+      />
+    )}
+    </>
   )
 }

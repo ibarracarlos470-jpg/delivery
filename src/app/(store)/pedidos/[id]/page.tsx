@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Package, CheckCircle, Clock, Truck, MapPin, User, Phone, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useUser } from '@clerk/nextjs'
+import OrderChat from '@/components/chat/OrderChat'
 
 type OrderDetail = {
   id: string
@@ -48,6 +50,7 @@ const PAYMENT_LABEL: Record<string, string> = {
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { user } = useUser()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -93,6 +96,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const isCancelled = currentStatus === 'CANCELLED'
 
   return (
+    <>
     <div className="container mx-auto px-4 py-8 max-w-2xl space-y-5">
       <div className="flex items-center gap-3">
         <Link href="/pedidos">
@@ -237,5 +241,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <Button variant="outline" className="w-full">Seguir comprando</Button>
       </Link>
     </div>
+
+    {order.delivery?.driver && !['DELIVERED', 'CANCELLED'].includes(order.status) && (
+      <OrderChat
+        orderId={id}
+        myRole="CUSTOMER"
+        myName={user?.fullName ?? 'Cliente'}
+      />
+    )}
+    </>
   )
 }
