@@ -66,11 +66,6 @@ export default function Header() {
               TuMarca
             </Link>
 
-            {/* Branch selector */}
-            <div className="hidden md:block shrink-0">
-              <BranchSelector />
-            </div>
-
             {/* City — desktop only */}
             <button className="hidden md:flex items-center gap-1 text-sm text-green-100 shrink-0">
               <MapPin size={15} />
@@ -115,6 +110,10 @@ export default function Header() {
                   </Button>
                 </SignInButton>
               )}
+              {/* Branch selector — top right */}
+              <div className="border-l border-green-600 pl-3">
+                <BranchSelector />
+              </div>
             </div>
 
             {/* Cart + Hamburger */}

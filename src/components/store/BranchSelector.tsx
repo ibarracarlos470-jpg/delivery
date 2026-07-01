@@ -69,8 +69,8 @@ export default function BranchSelector() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-green-700 transition-colors">
-        <MapPin size={14} className="text-green-600" />
+        className="flex items-center gap-1.5 text-sm text-green-100 hover:text-white transition-colors">
+        <MapPin size={14} className="text-green-200" />
         <span className="max-w-[140px] truncate">{current?.city ?? 'Seleccionar sede'}</span>
         <ChevronDown size={13} />
       </button>
