@@ -145,7 +145,7 @@ export default function OfertasClient({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {products.map(p => (
               <div key={p.id}
                 className="bg-white rounded-xl border hover:shadow-md transition-shadow flex flex-col group">
