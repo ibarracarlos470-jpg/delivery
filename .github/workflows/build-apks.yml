@@ -25,8 +25,9 @@ jobs:
       - name: Install Gradle 8.5
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /opt/gradle
-          echo "/opt/gradle/gradle-8.5/bin" >> $GITHUB_PATH
+          unzip -q /tmp/gradle.zip -d /tmp
+          ls /tmp/gradle-8.5/bin/
+          echo "GRADLE=/tmp/gradle-8.5/bin/gradle" >> $GITHUB_ENV
 
       - name: Generate keystore
         run: |
@@ -41,30 +42,38 @@ jobs:
             | grep "SHA256:" | awk '{print $2}' > fingerprint.txt
           echo "Fingerprint: $(cat fingerprint.txt)"
 
-      - name: Generate launcher icons (ImageMagick)
+      - name: Generate launcher icons (Python)
         run: |
-          # Customer icons — green
-          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
-            density="${spec%%:*}"; size="${spec##*:}"
-            dir="android-customer/app/src/main/res/mipmap-$density"
-            mkdir -p "$dir"
-            convert -size "${size}x${size}" xc:'#00873d' \
-              -gravity center -fill white -font DejaVu-Sans-Bold \
-              -pointsize "$((size * 35 / 100))" -annotate 0 "TM" \
-              "$dir/ic_launcher.png"
-            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
-          done
-          # Driver icons — orange
-          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
-            density="${spec%%:*}"; size="${spec##*:}"
-            dir="android-driver/app/src/main/res/mipmap-$density"
-            mkdir -p "$dir"
-            convert -size "${size}x${size}" xc:'#f97316' \
-              -gravity center -fill white -font DejaVu-Sans-Bold \
-              -pointsize "$((size * 35 / 100))" -annotate 0 "TR" \
-              "$dir/ic_launcher.png"
-            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
-          done
+          python3 << 'PYEOF'
+          import struct, zlib, os
+
+          def make_png(size, rgb):
+              r, g, b = rgb
+              def chunk(tag, data):
+                  c = zlib.crc32(tag + data) & 0xffffffff
+                  return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', c)
+              row = bytes([0]) + bytes([r, g, b] * size)
+              raw = b''.join(row for _ in range(size))
+              ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
+              return (b'\x89PNG\r\n\x1a\n'
+                      + chunk(b'IHDR', ihdr)
+                      + chunk(b'IDAT', zlib.compress(raw))
+                      + chunk(b'IEND', b''))
+
+          densities = [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]
+          green = (0, 135, 61)
+          orange = (249, 115, 22)
+
+          for density, size in densities:
+              for app, color in [('android-customer', green), ('android-driver', orange)]:
+                  d = f'{app}/app/src/main/res/mipmap-{density}'
+                  os.makedirs(d, exist_ok=True)
+                  data = make_png(size, color)
+                  open(f'{d}/ic_launcher.png', 'wb').write(data)
+                  open(f'{d}/ic_launcher_round.png', 'wb').write(data)
+
+          print("Icons generated OK")
+          PYEOF
 
       - name: Accept Android SDK licenses
         run: |
@@ -74,14 +83,14 @@ jobs:
       - name: Build Customer APK
         run: |
           cd android-customer
-          gradle assembleRelease --no-daemon -q
-          find . -name "*.apk" | head -5
+          $GRADLE assembleRelease --no-daemon
+          find . -name "*.apk"
 
       - name: Build Driver APK
         run: |
           cd android-driver
-          gradle assembleRelease --no-daemon -q
-          find . -name "*.apk" | head -5
+          $GRADLE assembleRelease --no-daemon
+          find . -name "*.apk"
 
       - name: Collect APKs
         run: |
@@ -91,7 +100,6 @@ jobs:
             | xargs -I{} cp {} "apks/TuMarca-Cliente-${VERSION}.apk" 2>/dev/null || true
           find android-driver -name "*.apk" | head -1 \
             | xargs -I{} cp {} "apks/TuMarca-Repartidor-${VERSION}.apk" 2>/dev/null || true
-          echo "=== APKs ==="
           ls -lh apks/
 
       - name: Upload artifacts
