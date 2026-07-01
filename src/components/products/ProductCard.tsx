@@ -1,8 +1,7 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ShoppingCart, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useCartStore } from '@/store/cart'
 import { toast } from 'sonner'
@@ -26,8 +25,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const discountPct = hasDiscount
     ? Math.round((1 - product.salePrice! / product.price) * 100)
     : 0
+  const activePrice = hasDiscount ? product.salePrice! : product.price
+  const outOfStock = product.stock === 0
 
   const handleAdd = () => {
+    if (outOfStock) return
     addItem({
       id: product.id,
       name: product.name,
@@ -36,69 +38,72 @@ export default function ProductCard({ product }: { product: Product }) {
       image: product.images[0] ?? '/placeholder.svg',
       stock: product.stock,
     })
-    toast.success('Producto agregado al carrito')
+    toast.success(`${product.name.slice(0, 30)} agregado`)
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow flex flex-col">
-      <Link
-        href={`/producto/${product.slug}`}
-        className="relative aspect-square overflow-hidden rounded-t-lg bg-gray-100 block"
-      >
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all duration-200 flex flex-col group">
+      {/* Image */}
+      <Link href={`/producto/${product.slug}`} className="relative block overflow-hidden rounded-t-xl bg-gray-50">
+        <div className="aspect-square relative">
+          <Image
+            src={product.images[0] ?? '/placeholder.svg'}
+            alt={product.name}
+            fill
+            className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          />
+        </div>
         {hasDiscount && (
-          <Badge className="absolute top-2 left-2 z-10 bg-red-500 text-white">
+          <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-lg shadow">
             -{discountPct}%
           </Badge>
         )}
-        <Image
-          src={product.images[0] ?? '/placeholder.svg'}
-          alt={product.name}
-          fill
-          className="object-contain p-4"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-        />
+        {outOfStock && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+            <span className="bg-gray-700 text-white text-xs font-bold px-3 py-1 rounded-full">Agotado</span>
+          </div>
+        )}
       </Link>
 
-      <div className="p-3 flex flex-col flex-1">
+      {/* Info */}
+      <div className="p-3 flex flex-col flex-1 gap-1.5">
         {product.brand && (
-          <p className="text-xs text-gray-400 mb-1">{product.brand.name}</p>
+          <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{product.brand.name}</p>
         )}
-        <Link
-          href={`/producto/${product.slug}`}
-          className="text-sm font-medium text-gray-800 hover:text-green-700 line-clamp-2 flex-1"
-        >
+        <Link href={`/producto/${product.slug}`}
+          className="text-xs sm:text-sm font-medium text-gray-800 hover:text-green-700 line-clamp-2 leading-snug flex-1 transition-colors">
           {product.name}
         </Link>
 
-        <div className="mt-2 flex items-end justify-between gap-1">
+        {/* Price row */}
+        <div className="flex items-end justify-between gap-1 mt-auto pt-1">
           <div className="min-w-0">
-            {hasDiscount ? (
-              <>
-                <p className="text-base font-bold text-green-700">${product.salePrice!.toFixed(2)}</p>
-                {rate > 0 && <p className="text-xs text-blue-500 leading-tight truncate">{formatBs(product.salePrice!, rate)}</p>}
-                <p className="text-xs text-gray-400 line-through">${product.price.toFixed(2)}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-base font-bold text-green-700">${product.price.toFixed(2)}</p>
-                {rate > 0 && <p className="text-xs text-blue-500 leading-tight truncate">{formatBs(product.price, rate)}</p>}
-              </>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base font-extrabold text-green-700">${activePrice.toFixed(2)}</span>
+              {hasDiscount && (
+                <span className="text-xs text-gray-400 line-through">${product.price.toFixed(2)}</span>
+              )}
+            </div>
+            {rate > 0 && (
+              <p className="text-[11px] text-blue-500 font-medium leading-tight truncate">
+                {formatBs(activePrice, rate)}
+              </p>
             )}
           </div>
 
-          <Button
-            size="sm"
+          <button
             onClick={handleAdd}
-            disabled={product.stock === 0}
-            className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0 shrink-0"
+            disabled={outOfStock}
+            className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+              outOfStock
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow'
+            }`}
           >
-            <ShoppingCart size={15} />
-          </Button>
+            <Plus size={16} />
+          </button>
         </div>
-
-        {product.stock === 0 && (
-          <p className="text-xs text-red-500 mt-1">Agotado</p>
-        )}
       </div>
     </div>
   )
