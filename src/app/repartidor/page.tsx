@@ -48,7 +48,7 @@ export default function DriverDashboard() {
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 30000)
+    const interval = setInterval(load, 5000)
     return () => clearInterval(interval)
   }, [load])
 
