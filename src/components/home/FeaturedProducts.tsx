@@ -41,7 +41,7 @@ export default async function FeaturedProducts() {
               <span className="text-2xl">⭐</span>
               <h2 className="text-2xl font-bold text-gray-800">Destacados</h2>
             </div>
-            <Link href="/categoria/salud-medicamentos" className="text-green-700 hover:text-green-800 text-sm font-semibold">
+            <Link href="/buscar" className="text-green-700 hover:text-green-800 text-sm font-semibold">
               Ver todos →
             </Link>
           </div>

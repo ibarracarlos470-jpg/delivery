@@ -12,10 +12,10 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3">Categorías</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/categoria/salud-medicamentos" className="hover:text-white">Salud</Link></li>
-              <li><Link href="/categoria/belleza" className="hover:text-white">Belleza</Link></li>
-              <li><Link href="/categoria/cuidado-bebe" className="hover:text-white">Bebé</Link></li>
-              <li><Link href="/categoria/cuidado-personal" className="hover:text-white">Personal</Link></li>
+              <li><Link href="/categoria/analgesicos-antipireticos" className="hover:text-white">Analgésicos</Link></li>
+              <li><Link href="/categoria/vitaminas-suplementos" className="hover:text-white">Vitaminas</Link></li>
+              <li><Link href="/categoria/cuidado-personal" className="hover:text-white">Cuidado Personal</Link></li>
+              <li><Link href="/categoria/primeros-auxilios" className="hover:text-white">Primeros Auxilios</Link></li>
             </ul>
           </div>
           <div>
