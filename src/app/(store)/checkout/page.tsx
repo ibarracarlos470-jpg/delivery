@@ -32,7 +32,12 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' })
   const { rate } = useExchangeRate()
   const [hydrated, setHydrated] = useState(false)
+  const [paymentSettings, setPaymentSettings] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(setPaymentSettings).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const unsub = useCartStore.persist.onFinishHydration(() => setHydrated(true))
@@ -211,6 +216,81 @@ export default function CheckoutPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Datos de pago según método seleccionado */}
+              {paymentMethod === 'TRANSFER' && (paymentSettings.transfer_bank || paymentSettings.transfer_account) && (
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <p className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <Banknote size={16} /> Datos para Transferencia Bancaria
+                  </p>
+                  <div className="space-y-1.5 text-sm text-blue-900">
+                    {paymentSettings.transfer_bank && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Banco</span>
+                        <span className="font-semibold">{paymentSettings.transfer_bank}</span>
+                      </div>
+                    )}
+                    {paymentSettings.transfer_type && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Tipo</span>
+                        <span className="font-semibold">Cuenta {paymentSettings.transfer_type}</span>
+                      </div>
+                    )}
+                    {paymentSettings.transfer_account && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Cuenta</span>
+                        <span className="font-mono font-semibold">{paymentSettings.transfer_account}</span>
+                      </div>
+                    )}
+                    {paymentSettings.transfer_holder && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Titular</span>
+                        <span className="font-semibold">{paymentSettings.transfer_holder}</span>
+                      </div>
+                    )}
+                    {paymentSettings.transfer_rif && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">RIF / CI</span>
+                        <span className="font-semibold">{paymentSettings.transfer_rif}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-blue-600 mt-3 border-t border-blue-200 pt-2">
+                    Envía el comprobante al repartidor o por el chat del pedido.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === 'MOBILE_PAY' && (paymentSettings.mobile_phone || paymentSettings.mobile_bank) && (
+                <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <p className="text-sm font-bold text-orange-800 mb-3 flex items-center gap-2">
+                    <Smartphone size={16} /> Datos para Pago Móvil
+                  </p>
+                  <div className="space-y-1.5 text-sm text-orange-900">
+                    {paymentSettings.mobile_phone && (
+                      <div className="flex justify-between">
+                        <span className="text-orange-600">Teléfono</span>
+                        <span className="font-mono font-semibold">{paymentSettings.mobile_phone}</span>
+                      </div>
+                    )}
+                    {paymentSettings.mobile_bank && (
+                      <div className="flex justify-between">
+                        <span className="text-orange-600">Banco</span>
+                        <span className="font-semibold">{paymentSettings.mobile_bank}</span>
+                      </div>
+                    )}
+                    {paymentSettings.mobile_id && (
+                      <div className="flex justify-between">
+                        <span className="text-orange-600">Cédula</span>
+                        <span className="font-semibold">{paymentSettings.mobile_id}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-orange-600 mt-3 border-t border-orange-200 pt-2">
+                    Envía el comprobante al repartidor o por el chat del pedido.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

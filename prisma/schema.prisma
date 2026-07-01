@@ -209,3 +209,9 @@ model Banner {
   active    Boolean @default(true)
   order     Int     @default(0)
 }
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
