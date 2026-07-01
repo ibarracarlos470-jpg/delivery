@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useExchangeRate } from '@/contexts/ExchangeRateContext'
 
 export default function Header() {
   const { isSignedIn } = useUser()
   const { items } = useCartStore()
+  const { rate, at } = useExchangeRate()
   const [query, setQuery] = useState('')
   const [cityName, setCityName] = useState('Detectando...')
   const router = useRouter()
@@ -39,8 +41,19 @@ export default function Header() {
     if (query.trim()) router.push(`/buscar?q=${encodeURIComponent(query)}`)
   }
 
+  const rateDate = at
+    ? new Date(at).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : null
+
   return (
     <header className="bg-[#00873d] text-white sticky top-0 z-50">
+      {rate > 0 && (
+        <div className="bg-[#005c29] text-green-100 text-xs text-center py-1 px-4">
+          <span className="font-semibold text-white">Tasa BCV:</span>
+          {' '}1 $ = Bs {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate)}
+          {rateDate && <span className="ml-2 text-green-300">· Actualizada {rateDate}</span>}
+        </div>
+      )}
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-2xl font-bold text-white shrink-0">

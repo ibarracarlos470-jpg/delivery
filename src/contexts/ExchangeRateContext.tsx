@@ -29,7 +29,5 @@ export function useExchangeRate() {
 export function formatBs(usd: number, rate: number) {
   if (!rate) return null
   const bs = usd * rate
-  return bs >= 1000
-    ? `Bs ${(bs / 1000).toFixed(2)}k`
-    : `Bs ${bs.toFixed(2)}`
+  return `Bs ${new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(bs)}`
 }
