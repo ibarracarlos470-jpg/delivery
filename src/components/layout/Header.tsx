@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { Search, ShoppingCart, MapPin, Package, User } from 'lucide-react'
+import { Search, ShoppingCart, MapPin, Package, User, Tag } from 'lucide-react'
 import { UserButton, SignInButton, useUser } from '@clerk/nextjs'
 import { useCartStore } from '@/store/cart'
 import { Input } from '@/components/ui/input'
@@ -51,6 +51,11 @@ export default function Header() {
             <MapPin size={16} />
             {cityName}
           </button>
+
+          <Link href="/ofertas" className="hidden md:flex items-center gap-1 text-sm font-semibold text-yellow-300 hover:text-yellow-100 shrink-0">
+            <Tag size={15} />
+            Ofertas
+          </Link>
 
           <form onSubmit={handleSearch} className="flex-1 flex gap-2 max-w-xl">
             <Input
