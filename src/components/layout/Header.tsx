@@ -92,7 +92,7 @@ export default function Header() {
 
             {/* Cart + Hamburger */}
             <div className="flex items-center gap-3 shrink-0">
-              <Link href="/carrito" className="relative">
+              <Link href="/carrito" className="relative text-white hover:text-green-100">
                 <ShoppingCart size={22} />
                 {totalItems > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-yellow-400 text-black text-xs font-bold">
