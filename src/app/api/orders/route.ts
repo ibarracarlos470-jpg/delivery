@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -28,8 +28,19 @@ export async function POST(req: NextRequest) {
 
   const { items, shippingAddress, paymentMethod, zoneId, deliveryNote } = parsed.data
 
-  const user = await prisma.user.findUnique({ where: { clerkId: userId } })
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  let user = await prisma.user.findUnique({ where: { clerkId: userId } })
+  if (!user) {
+    const clerk = await clerkClient()
+    const clerkUser = await clerk.users.getUser(userId)
+    user = await prisma.user.create({
+      data: {
+        clerkId: userId,
+        email: clerkUser.emailAddresses[0]?.emailAddress ?? '',
+        name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null,
+        role: 'CUSTOMER',
+      },
+    })
+  }
 
   const products = await prisma.product.findMany({
     where: { id: { in: items.map(i => i.productId) } },
