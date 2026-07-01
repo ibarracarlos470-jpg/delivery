@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useUser } from '@clerk/nextjs'
-import { MapPin, Clock, CreditCard, Banknote, Smartphone, CheckCircle } from 'lucide-react'
+import { MapPin, Clock, CreditCard, Banknote, Smartphone, CheckCircle, AlertCircle } from 'lucide-react'
 
 type Zone = {
   id: string
@@ -20,10 +21,10 @@ type Zone = {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'CASH', label: 'Efectivo', icon: Banknote },
-  { value: 'MOBILE_PAY', label: 'Pago Móvil', icon: Smartphone },
-  { value: 'TRANSFER', label: 'Transferencia', icon: CreditCard },
-  { value: 'CARD', label: 'Tarjeta', icon: CreditCard },
+  { value: 'CASH',       label: 'Efectivo',        icon: Banknote },
+  { value: 'MOBILE_PAY', label: 'Pago Móvil',       icon: Smartphone },
+  { value: 'TRANSFER',   label: 'Transferencia',    icon: CreditCard },
+  { value: 'CARD',       label: 'Tarjeta',          icon: CreditCard },
 ]
 
 export default function CheckoutPage() {
@@ -35,28 +36,34 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('CASH')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    city: '',
-  })
+  const [error, setError] = useState<string | null>(null)
+  const [zonesLoading, setZonesLoading] = useState(true)
+  const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' })
+
+  // Redirect if cart empty
+  useEffect(() => {
+    if (items.length === 0) router.replace('/carrito')
+  }, [items.length, router])
+
+  // Load zones + prefill form
+  useEffect(() => {
+    fetch('/api/delivery/zones')
+      .then(r => r.json())
+      .then(data => { setZones(data); setZonesLoading(false) })
+      .catch(() => setZonesLoading(false))
+  }, [])
 
   useEffect(() => {
-    fetch('/api/delivery/zones').then(r => r.json()).then(setZones)
     if (user) {
       setForm(f => ({
         ...f,
-        name: user.fullName ?? '',
-        phone: user.primaryPhoneNumber?.phoneNumber ?? '',
+        name: f.name || user.fullName || '',
+        phone: f.phone || user.primaryPhoneNumber?.phoneNumber || '',
       }))
     }
   }, [user])
 
-  if (items.length === 0) {
-    router.push('/carrito')
-    return null
-  }
+  if (items.length === 0) return null
 
   const subtotal = total()
   const deliveryFee = selectedZone?.deliveryFee ?? 0
@@ -64,10 +71,18 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
+
     if (!selectedZone) {
-      alert('Selecciona una zona de entrega')
+      setError('Selecciona una zona de entrega antes de continuar.')
+      document.getElementById('zonas')?.scrollIntoView({ behavior: 'smooth' })
       return
     }
+    if (!form.name.trim() || !form.address.trim() || !form.city.trim()) {
+      setError('Completa todos los datos de entrega.')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/orders', {
@@ -81,12 +96,18 @@ export default function CheckoutPage() {
           deliveryNote: note,
         }),
       })
-      if (!res.ok) throw new Error('Error al crear el pedido')
-      const order = await res.json()
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(typeof data.error === 'string' ? data.error : 'Error al crear el pedido. Intenta de nuevo.')
+        return
+      }
+
       clearCart()
-      router.push(`/pedidos/${order.id}`)
+      router.push(`/pedidos/${data.id}`)
     } catch {
-      alert('Error al procesar el pedido. Intenta de nuevo.')
+      setError('Error de conexión. Verifica tu internet e intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -95,10 +116,19 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <h1 className="text-2xl font-bold mb-6">Finalizar Pedido</h1>
+
+      {/* Global error */}
+      {error && (
+        <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Left: form */}
+          {/* Left */}
           <div className="lg:col-span-2 space-y-6">
 
             {/* Delivery data */}
@@ -108,60 +138,73 @@ export default function CheckoutPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Nombre completo</Label>
+                  <Label htmlFor="name">Nombre completo *</Label>
                   <Input id="name" required value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                 </div>
                 <div>
                   <Label htmlFor="phone">Teléfono</Label>
-                  <Input id="phone" required value={form.phone}
+                  <Input id="phone" value={form.phone} placeholder="+58 412 000 0000"
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label htmlFor="address">Dirección</Label>
+                  <Label htmlFor="address">Dirección *</Label>
                   <Input id="address" required value={form.address}
                     placeholder="Calle, número, sector..."
                     onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
                 </div>
                 <div>
-                  <Label htmlFor="city">Ciudad / Municipio</Label>
+                  <Label htmlFor="city">Ciudad / Municipio *</Label>
                   <Input id="city" required value={form.city}
                     onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
                 </div>
                 <div>
-                  <Label htmlFor="note">Nota para el repartidor (opcional)</Label>
-                  <Input id="note" value={note}
-                    placeholder="Portón azul, piso 2..."
+                  <Label htmlFor="note">Nota para el repartidor</Label>
+                  <Input id="note" value={note} placeholder="Portón azul, piso 2..."
                     onChange={e => setNote(e.target.value)} />
                 </div>
               </div>
             </div>
 
             {/* Delivery zones */}
-            <div className="bg-white rounded-xl border p-6">
-              <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <div id="zonas" className="bg-white rounded-xl border p-6">
+              <h2 className="font-bold text-lg mb-1 flex items-center gap-2">
                 <Clock size={20} className="text-green-600" /> Zona de Entrega
               </h2>
+              <p className="text-sm text-gray-400 mb-4">Selecciona la zona donde recibirás tu pedido</p>
+
+              {zonesLoading && (
+                <div className="grid grid-cols-2 gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {!zonesLoading && zones.length === 0 && (
+                <p className="text-sm text-gray-500 py-4 text-center">No hay zonas disponibles</p>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {zones.map(zone => (
                   <button key={zone.id} type="button"
-                    onClick={() => setSelectedZone(zone)}
-                    className={`text-left border rounded-lg p-4 transition-all ${
+                    onClick={() => { setSelectedZone(zone); setError(null) }}
+                    className={`text-left border-2 rounded-xl p-4 transition-all ${
                       selectedZone?.id === zone.id
-                        ? 'border-green-500 bg-green-50 ring-1 ring-green-400'
-                        : 'hover:border-green-300 hover:bg-green-50/50'
+                        ? 'border-green-500 bg-green-50 shadow-sm'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50/30'
                     }`}>
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-semibold">{zone.name}</p>
+                        <p className="font-semibold text-gray-800">{zone.name}</p>
                         {zone.description && (
-                          <p className="text-sm text-gray-500">{zone.description}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{zone.description}</p>
                         )}
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           {zone.estimatedMin}–{zone.estimatedMax} min
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0 ml-2">
                         <p className="font-bold text-green-700">${zone.deliveryFee.toFixed(2)}</p>
                         {selectedZone?.id === zone.id && (
                           <CheckCircle size={16} className="text-green-500 mt-1 ml-auto" />
@@ -171,6 +214,12 @@ export default function CheckoutPage() {
                   </button>
                 ))}
               </div>
+
+              {!selectedZone && zones.length > 0 && (
+                <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+                  <AlertCircle size={13} /> Debes seleccionar una zona para continuar
+                </p>
+              )}
             </div>
 
             {/* Payment */}
@@ -182,10 +231,10 @@ export default function CheckoutPage() {
                 {PAYMENT_METHODS.map(({ value, label, icon: Icon }) => (
                   <button key={value} type="button"
                     onClick={() => setPaymentMethod(value)}
-                    className={`flex items-center gap-3 border rounded-lg p-4 transition-all ${
+                    className={`flex items-center gap-3 border-2 rounded-xl p-4 transition-all ${
                       paymentMethod === value
-                        ? 'border-green-500 bg-green-50 ring-1 ring-green-400'
-                        : 'hover:border-green-300'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:border-green-300'
                     }`}>
                     <Icon size={20} className={paymentMethod === value ? 'text-green-600' : 'text-gray-400'} />
                     <span className="font-medium text-sm">{label}</span>
@@ -222,9 +271,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery</span>
-                  <span className={deliveryFee === 0 ? 'text-gray-400' : 'text-gray-700'}>
-                    {selectedZone ? `$${deliveryFee.toFixed(2)}` : '—'}
-                  </span>
+                  <span>{selectedZone ? `$${deliveryFee.toFixed(2)}` : <span className="text-gray-400">— elige zona</span>}</span>
                 </div>
                 <div className="flex justify-between font-bold text-base border-t pt-2">
                   <span>Total</span>
@@ -233,13 +280,20 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={loading || !selectedZone}
+            <Button type="submit" disabled={loading}
               className="w-full bg-green-600 hover:bg-green-700 h-12 text-base">
               {loading ? 'Procesando...' : 'Confirmar Pedido'}
             </Button>
-            <p className="text-xs text-gray-400 text-center">
-              Al confirmar aceptas nuestros términos de servicio
-            </p>
+
+            {!selectedZone && (
+              <p className="text-xs text-center text-amber-600 flex items-center justify-center gap-1">
+                <AlertCircle size={13} /> Selecciona una zona de entrega
+              </p>
+            )}
+
+            <Link href="/carrito" className="block text-center text-sm text-gray-400 hover:text-gray-600">
+              ← Volver al carrito
+            </Link>
           </div>
         </div>
       </form>
