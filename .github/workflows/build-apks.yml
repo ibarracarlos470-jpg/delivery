@@ -11,8 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout
@@ -24,74 +22,54 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli@latest
+        run: npm install -g @bubblewrap/cli
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK components
+      - name: Android SDK components
         run: |
-          yes | sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>/dev/null | tail -3
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" "build-tools;34.0.0" "platforms;android-34" 2>/dev/null | tail -3 || true
 
-      - name: Generate signing keystore
+      - name: Generate keystore
         run: |
           keytool -genkeypair -v \
             -keystore android.keystore \
             -alias android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass tumarca2024 -keypass tumarca2024 \
-            -dname "CN=TuMarca, OU=Dev, O=TuMarca, L=Caracas, S=Miranda, C=VE"
-          keytool -list -v -keystore android.keystore -alias android -storepass tumarca2024 2>/dev/null \
+            -dname "CN=TuMarca,OU=Dev,O=TuMarca,L=Caracas,S=Miranda,C=VE"
+          keytool -list -v -keystore android.keystore -alias android \
+            -storepass tumarca2024 2>/dev/null \
             | grep "SHA256:" | awk '{print $2}' > fingerprint.txt
-          echo "=== Fingerprint SHA256 ==="
-          cat fingerprint.txt
+          echo "Fingerprint: $(cat fingerprint.txt)"
 
       - name: Build Customer APK
         run: |
           cd twa-customer
-          echo "--- Running bubblewrap init ---"
-          bubblewrap init --skipPwaValidation 2>&1
-          echo "--- Running bubblewrap build ---"
+          # "N" = do not overwrite existing twa-manifest.json, just generate Android project
+          printf "N\n" | bubblewrap init --skipPwaValidation
           bubblewrap build \
             --signingKeyStorePassword tumarca2024 \
-            --signingKeyPassword tumarca2024 2>&1
-          echo "--- Finding APK ---"
-          find . -name "*.apk" 2>/dev/null
+            --signingKeyPassword tumarca2024
 
       - name: Build Driver APK
         run: |
           cd twa-driver
-          echo "--- Running bubblewrap init ---"
-          bubblewrap init --skipPwaValidation 2>&1
-          echo "--- Running bubblewrap build ---"
+          printf "N\n" | bubblewrap init --skipPwaValidation
           bubblewrap build \
             --signingKeyStorePassword tumarca2024 \
-            --signingKeyPassword tumarca2024 2>&1
-          echo "--- Finding APK ---"
-          find . -name "*.apk" 2>/dev/null
+            --signingKeyPassword tumarca2024
 
       - name: Collect APKs
         run: |
           mkdir -p apks
-          # Try multiple possible output paths from Bubblewrap
-          for src in \
-            "twa-customer/app-release-signed.apk" \
-            "twa-customer/app/build/outputs/apk/release/app-release-signed.apk" \
-            "twa-customer/app/build/outputs/apk/release/app-release.apk"; do
-            [ -f "$src" ] && cp "$src" "apks/TuMarca-Cliente-${{ github.event.inputs.version }}.apk" && break
-          done
-          for src in \
-            "twa-driver/app-release-signed.apk" \
-            "twa-driver/app/build/outputs/apk/release/app-release-signed.apk" \
-            "twa-driver/app/build/outputs/apk/release/app-release.apk"; do
-            [ -f "$src" ] && cp "$src" "apks/TuMarca-Repartidor-${{ github.event.inputs.version }}.apk" && break
-          done
+          find twa-customer -name "*.apk" | head -1 | xargs -I{} cp {} "apks/TuMarca-Cliente-${{ github.event.inputs.version }}.apk" 2>/dev/null || true
+          find twa-driver   -name "*.apk" | head -1 | xargs -I{} cp {} "apks/TuMarca-Repartidor-${{ github.event.inputs.version }}.apk" 2>/dev/null || true
           echo "=== APKs generados ==="
           ls -lh apks/ 2>/dev/null || echo "No se encontraron APKs"
 
