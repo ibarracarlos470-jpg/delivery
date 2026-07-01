@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TuMarca Repartidor</string>
+    <string name="asset_statements">[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"ve.tumarca.repartidor","sha256_cert_fingerprints":["2E:7D:2A:CB:2D:36:50:C9:42:96:89:EC:F6:4C:15:AE:F5:1E:06:DF:FA:59:8B:AF:F5:54:B9:07:98:F2:31:3F"]}}]</string>
+</resources>

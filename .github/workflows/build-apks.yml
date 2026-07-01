@@ -22,18 +22,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Gradle 8.5
+        uses: gradle/actions/setup-gradle@v3
         with:
-          node-version: '22'
-
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
-      - name: Android SDK components
-        run: |
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMANAGER" "build-tools;34.0.0" "platforms;android-34" 2>/dev/null | tail -3 || true
+          gradle-version: '8.5'
 
       - name: Generate keystore
         run: |
@@ -48,30 +40,58 @@ jobs:
             | grep "SHA256:" | awk '{print $2}' > fingerprint.txt
           echo "Fingerprint: $(cat fingerprint.txt)"
 
+      - name: Generate launcher icons (ImageMagick)
+        run: |
+          # Customer icons — green
+          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${spec%%:*}"; size="${spec##*:}"
+            dir="android-customer/app/src/main/res/mipmap-$density"
+            mkdir -p "$dir"
+            convert -size "${size}x${size}" xc:'#00873d' \
+              -gravity center -fill white -font DejaVu-Sans-Bold \
+              -pointsize "$((size * 35 / 100))" -annotate 0 "TM" \
+              "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+          # Driver icons — orange
+          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${spec%%:*}"; size="${spec##*:}"
+            dir="android-driver/app/src/main/res/mipmap-$density"
+            mkdir -p "$dir"
+            convert -size "${size}x${size}" xc:'#f97316' \
+              -gravity center -fill white -font DejaVu-Sans-Bold \
+              -pointsize "$((size * 35 / 100))" -annotate 0 "TR" \
+              "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>/dev/null || true
+
       - name: Build Customer APK
         run: |
-          cd twa-customer
-          # "N" = do not overwrite existing twa-manifest.json, just generate Android project
-          printf "N\n" | bubblewrap init --skipPwaValidation
-          bubblewrap build \
-            --signingKeyStorePassword tumarca2024 \
-            --signingKeyPassword tumarca2024
+          cd android-customer
+          gradle assembleRelease --no-daemon -q
+          find . -name "*.apk" | head -5
 
       - name: Build Driver APK
         run: |
-          cd twa-driver
-          printf "N\n" | bubblewrap init --skipPwaValidation
-          bubblewrap build \
-            --signingKeyStorePassword tumarca2024 \
-            --signingKeyPassword tumarca2024
+          cd android-driver
+          gradle assembleRelease --no-daemon -q
+          find . -name "*.apk" | head -5
 
       - name: Collect APKs
         run: |
           mkdir -p apks
-          find twa-customer -name "*.apk" | head -1 | xargs -I{} cp {} "apks/TuMarca-Cliente-${{ github.event.inputs.version }}.apk" 2>/dev/null || true
-          find twa-driver   -name "*.apk" | head -1 | xargs -I{} cp {} "apks/TuMarca-Repartidor-${{ github.event.inputs.version }}.apk" 2>/dev/null || true
-          echo "=== APKs generados ==="
-          ls -lh apks/ 2>/dev/null || echo "No se encontraron APKs"
+          VERSION="${{ github.event.inputs.version }}"
+          find android-customer -name "*.apk" | head -1 \
+            | xargs -I{} cp {} "apks/TuMarca-Cliente-${VERSION}.apk" 2>/dev/null || true
+          find android-driver -name "*.apk" | head -1 \
+            | xargs -I{} cp {} "apks/TuMarca-Repartidor-${VERSION}.apk" 2>/dev/null || true
+          echo "=== APKs ==="
+          ls -lh apks/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
