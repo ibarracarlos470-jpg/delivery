@@ -30,17 +30,17 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' })
   const [hydrated, setHydrated] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    // Wait for Zustand persist to rehydrate from localStorage
     const unsub = useCartStore.persist.onFinishHydration(() => setHydrated(true))
     if (useCartStore.persist.hasHydrated()) setHydrated(true)
     return unsub
   }, [])
 
   useEffect(() => {
-    if (hydrated && items.length === 0) router.replace('/carrito')
-  }, [hydrated, items.length, router])
+    if (hydrated && !submitted && items.length === 0) router.replace('/carrito')
+  }, [hydrated, submitted, items.length, router])
 
   useEffect(() => {
     if (user) {
@@ -112,6 +112,7 @@ export default function CheckoutPage() {
         return
       }
 
+      setSubmitted(true)
       clearCart()
       router.push(`/pedidos/${data.id}`)
     } catch {
