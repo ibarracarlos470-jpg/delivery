@@ -26,8 +26,8 @@ export async function GET() {
       },
       orderBy: { createdAt: 'asc' },
     }),
-    // My active delivery
-    prisma.order.findFirst({
+    // My active deliveries (up to 3)
+    prisma.order.findMany({
       where: {
         status: { in: ['CONFIRMED', 'PREPARING', 'ON_THE_WAY'] },
         delivery: { driverId: user.id },
@@ -38,6 +38,8 @@ export async function GET() {
         items: { include: { product: { select: { name: true } } } },
         user: { select: { name: true, phone: true } },
       },
+      orderBy: { createdAt: 'asc' },
+      take: 3,
     }),
     // My completed deliveries (last 20)
     prisma.order.findMany({
@@ -55,5 +57,5 @@ export async function GET() {
     }),
   ])
 
-  return NextResponse.json({ available, active, history })
+  return NextResponse.json({ available, active, history, activeCount: active.length })
 }

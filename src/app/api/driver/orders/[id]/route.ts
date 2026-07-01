@@ -35,6 +35,15 @@ export async function POST(
     if (delivery.driverId) {
       return NextResponse.json({ error: 'Ya tiene repartidor asignado' }, { status: 409 })
     }
+    const activeCount = await prisma.order.count({
+      where: {
+        status: { in: ['CONFIRMED', 'PREPARING', 'ON_THE_WAY'] },
+        delivery: { driverId: user.id },
+      },
+    })
+    if (activeCount >= 3) {
+      return NextResponse.json({ error: 'Tienes 3 pedidos activos. Entrega uno antes de aceptar otro.' }, { status: 409 })
+    }
     await prisma.$transaction([
       prisma.order.update({ where: { id }, data: { status: 'PREPARING' } }),
       prisma.delivery.update({
