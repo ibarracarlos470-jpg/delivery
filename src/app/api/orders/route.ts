@@ -40,10 +40,11 @@ export async function POST(req: NextRequest) {
     return acc + (product.salePrice ?? product.price) * item.quantity
   }, 0)
 
-  let deliveryFee = 0
+  const DEFAULT_DELIVERY_FEE = 3.00
+  let deliveryFee = DEFAULT_DELIVERY_FEE
   if (zoneId) {
     const zone = await prisma.deliveryZone.findUnique({ where: { id: zoneId } })
-    deliveryFee = zone?.deliveryFee ?? 0
+    deliveryFee = zone?.deliveryFee ?? DEFAULT_DELIVERY_FEE
   }
 
   const total = subtotal + deliveryFee
