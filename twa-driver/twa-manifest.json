@@ -1,0 +1,38 @@
+{
+  "packageId": "ve.tumarca.repartidor",
+  "host": "tumarca-ve.vercel.app",
+  "name": "TuMarca — Repartidor",
+  "launcherName": "TuMarca Driver",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#f97316",
+  "navigationColor": "#f97316",
+  "navigationColorDark": "#ea6c00",
+  "navigationDividerColor": "#f97316",
+  "navigationDividerColorDark": "#ea6c00",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": false,
+  "startUrl": "/repartidor",
+  "iconUrl": "https://tumarca-ve.vercel.app/icon-driver-512.svg",
+  "maskableIconUrl": "https://tumarca-ve.vercel.app/icon-driver-512.svg",
+  "monochromeIconUrl": "https://tumarca-ve.vercel.app/icon-driver-512.svg",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "Mis entregas", "short_name": "Entregas", "url": "/repartidor",           "icons": [] },
+    { "name": "Historial",    "short_name": "Historial", "url": "/repartidor/historial", "icons": [] }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://tumarca-ve.vercel.app/manifest-driver.json",
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "features": {},
+  "enableSiteSettingsShortcut": true,
+  "minSdkVersion": 19,
+  "targetSdkVersion": 34,
+  "signingKey": {
+    "path": "../android.keystore",
+    "alias": "android"
+  },
+  "fingerprints": []
+}

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useUser } from '@clerk/nextjs'
 import { MapPin, CreditCard, Banknote, Smartphone, AlertCircle, Navigation, Loader2 } from 'lucide-react'
 import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
+import { toast } from 'sonner'
 
 const PAYMENT_METHODS = [
   { value: 'CASH',       label: 'Efectivo',     icon: Banknote },
@@ -61,17 +62,18 @@ export default function CheckoutPage() {
 
   function detectLocation() {
     if (!navigator.geolocation) {
-      setError('Tu navegador no soporta geolocalización.')
+      toast.error('Tu navegador no soporta geolocalización')
       return
     }
     setLocating(true)
+    toast('Detectando ubicación...', { duration: 3000 })
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
           const res = await fetch(
             `/api/geocode?lat=${coords.latitude}&lon=${coords.longitude}`
           )
-          if (!res.ok) throw new Error('No se pudo obtener la dirección')
+          if (!res.ok) throw new Error('Sin respuesta del servidor')
           const data = await res.json()
           if (data.error) throw new Error(data.error)
           const addr = data.address ?? {}
@@ -84,21 +86,23 @@ export default function CheckoutPage() {
             address: fullAddress || f.address,
             city: city || f.city,
           }))
-          if (!fullAddress && !city) {
-            setError('Ubicación detectada pero no se pudo obtener la dirección. Ingrésala manualmente.')
+          if (fullAddress || city) {
+            toast.success('Ubicación detectada — verifica que sea correcta y corrígela si es necesario')
+          } else {
+            toast.warning('No se pudo obtener la dirección exacta. Ingrésala manualmente.')
           }
         } catch (e) {
-          setError(`No se pudo obtener tu ubicación: ${e instanceof Error ? e.message : 'intenta de nuevo'}`)
+          toast.error(`No se pudo obtener la dirección: ${e instanceof Error ? e.message : 'intenta de nuevo'}`)
         }
         setLocating(false)
       },
       (err) => {
         setLocating(false)
-        if (err.code === 1) setError('Permiso de ubicación denegado. Actívalo en tu navegador.')
-        else if (err.code === 2) setError('No se pudo detectar tu ubicación. Ingrésala manualmente.')
-        else setError('Tiempo de espera agotado. Intenta de nuevo.')
+        if (err.code === 1) toast.error('Permiso de ubicación denegado. Actívalo en ajustes del navegador.')
+        else if (err.code === 2) toast.error('No se pudo detectar la ubicación. Ingrésala manualmente.')
+        else toast.error('Tardó demasiado. Intenta de nuevo o ingresa la dirección.')
       },
-      { timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
   }
 
@@ -174,7 +178,7 @@ export default function CheckoutPage() {
                   <MapPin size={20} className="text-green-600" /> Dirección de Entrega
                 </h2>
                 <button type="button" onClick={detectLocation} disabled={locating}
-                  className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-medium disabled:opacity-50">
+                  className="sm:hidden flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-medium disabled:opacity-50">
                   {locating
                     ? <><Loader2 size={15} className="animate-spin" /> Detectando...</>
                     : <><Navigation size={15} /> Usar mi ubicación</>}

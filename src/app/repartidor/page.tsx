@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
-import { MapPin, Phone, Package, Clock, CheckCircle, Truck, RefreshCw, User } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { MapPin, Phone, Package, Clock, CheckCircle, Truck, RefreshCw, User, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
@@ -37,12 +37,17 @@ export default function DriverDashboard() {
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState<string | null>(null)
   const [chatOrderId, setChatOrderId] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activesRef = useRef<Order[]>([])
 
   const load = useCallback(async () => {
     const res = await fetch('/api/driver/orders')
     const data = await res.json()
+    const active = data.active ?? []
+    activesRef.current = active
     setAvailable(data.available ?? [])
-    setActives(data.active ?? [])
+    setActives(active)
     setLoading(false)
   }, [])
 
@@ -51,6 +56,49 @@ export default function DriverDashboard() {
     const interval = setInterval(load, 5000)
     return () => clearInterval(interval)
   }, [load])
+
+  // Use ref to avoid stale closure in GPS interval
+  const sendLocation = useCallback(() => {
+    const onTheWayOrders = activesRef.current.filter(o => o.delivery?.status === 'ON_THE_WAY')
+    if (onTheWayOrders.length === 0) return
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        onTheWayOrders.forEach(order => {
+          fetch('/api/driver/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id, lat: coords.latitude, lng: coords.longitude }),
+          }).catch(() => {})
+        })
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }, [])
+
+  useEffect(() => {
+    const hasOnTheWay = actives.some(o => o.delivery?.status === 'ON_THE_WAY')
+
+    if (hasOnTheWay && !locationIntervalRef.current) {
+      if (!navigator.geolocation) { toast.error('GPS no disponible'); return }
+      setSharing(true)
+      sendLocation() // immediate first update
+      locationIntervalRef.current = setInterval(sendLocation, 8000)
+      toast.success('Compartiendo ubicación en tiempo real')
+    }
+
+    if (!hasOnTheWay && locationIntervalRef.current) {
+      clearInterval(locationIntervalRef.current)
+      locationIntervalRef.current = null
+      setSharing(false)
+    }
+  }, [actives, sendLocation])
+
+  useEffect(() => {
+    return () => {
+      if (locationIntervalRef.current) clearInterval(locationIntervalRef.current)
+    }
+  }, [])
 
   async function doAction(orderId: string, action: 'accept' | 'pickup' | 'deliver') {
     setActing(orderId + action)
@@ -98,9 +146,16 @@ export default function DriverDashboard() {
               </p>
             )}
           </div>
-          <button onClick={load} className="text-gray-400 hover:text-orange-500 transition-colors">
-            <RefreshCw size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {sharing && (
+              <span className="flex items-center gap-1 text-xs bg-green-100 text-green-700 font-semibold px-2.5 py-1.5 rounded-full">
+                <Navigation size={11} className="animate-pulse" /> GPS activo
+              </span>
+            )}
+            <button onClick={load} className="text-gray-400 hover:text-orange-500 transition-colors">
+              <RefreshCw size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Active deliveries */}

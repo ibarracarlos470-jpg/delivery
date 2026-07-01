@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, use } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Package, CheckCircle, Clock, Truck, MapPin, User, Phone, ChevronLeft } from 'lucide-react'
@@ -8,6 +9,8 @@ import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
 import { toast } from 'sonner'
 import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
+
+const DeliveryMap = dynamic(() => import('@/components/map/DeliveryMap'), { ssr: false })
 
 type OrderDetail = {
   id: string
@@ -65,6 +68,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const prevStatusRef = useRef<string | null>(null)
+  const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     async function fetchOrder(initial = false) {
@@ -104,6 +108,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     return () => clearInterval(interval)
   }, [id])
+
+  // Poll driver location when ON_THE_WAY
+  useEffect(() => {
+    const currentStatus = order?.delivery?.status ?? order?.status
+    if (currentStatus !== 'ON_THE_WAY') return
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/orders/${id}/location`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.driverLat && data.driverLng) {
+          setDriverPos({ lat: data.driverLat, lng: data.driverLng })
+        }
+      } catch {}
+    }
+    poll()
+    const interval = setInterval(poll, 6000)
+    return () => clearInterval(interval)
+  }, [id, order?.delivery?.status, order?.status])
 
   if (loading) {
     return (
@@ -219,6 +242,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </a>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Live map when driver is on the way */}
+          {currentStatus === 'ON_THE_WAY' && driverPos && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-xs font-semibold text-green-700">Repartidor en vivo</p>
+              </div>
+              <DeliveryMap
+                driverLat={driverPos.lat}
+                driverLng={driverPos.lng}
+                className="h-56 sm:h-72 w-full"
+              />
+            </div>
+          )}
+
+          {currentStatus === 'ON_THE_WAY' && !driverPos && (
+            <div className="mt-4 bg-gray-50 rounded-xl h-40 flex items-center justify-center text-sm text-gray-400">
+              <span className="animate-pulse">Esperando ubicación del repartidor...</span>
             </div>
           )}
         </div>

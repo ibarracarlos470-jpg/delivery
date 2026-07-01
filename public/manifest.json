@@ -1,0 +1,22 @@
+{
+  "name": "TuMarca — Farmacia Online",
+  "short_name": "TuMarca",
+  "description": "Tu farmacia online con delivery 24/7",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#00873d",
+  "background_color": "#ffffff",
+  "categories": ["shopping", "health"],
+  "lang": "es",
+  "icons": [
+    { "src": "/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mis Pedidos", "url": "/pedidos", "description": "Ver mis pedidos" },
+    { "name": "Carrito",     "url": "/carrito",  "description": "Mi carrito de compras" }
+  ],
+  "screenshots": []
+}

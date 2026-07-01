@@ -1,0 +1,94 @@
+name: Build Android APKs (TWA)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (ej: 1.0.1)'
+        required: false
+        default: '1.0.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli@latest
+
+      - name: Setup Android SDK build tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: |
+          yes | sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>/dev/null | tail -5
+
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore android.keystore \
+            -alias android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass tumarca2024 -keypass tumarca2024 \
+            -dname "CN=TuMarca, OU=Dev, O=TuMarca, L=Caracas, S=Miranda, C=VE"
+          echo "Keystore generado"
+          # Extract SHA256 fingerprint for assetlinks.json
+          keytool -list -v -keystore android.keystore -alias android -storepass tumarca2024 2>/dev/null \
+            | grep "SHA256:" | awk '{print $2}' > fingerprint.txt
+          echo "Fingerprint SHA256:"
+          cat fingerprint.txt
+
+      - name: Build Customer APK
+        working-directory: twa-customer
+        run: |
+          bubblewrap build --skipPwaValidation 2>&1 | tail -20
+
+      - name: Build Driver APK
+        working-directory: twa-driver
+        run: |
+          bubblewrap build --skipPwaValidation 2>&1 | tail -20
+
+      - name: Collect APKs
+        run: |
+          mkdir -p apks
+          cp twa-customer/app-release-signed.apk apks/TuMarca-Cliente-${{ github.event.inputs.version }}.apk 2>/dev/null || \
+          cp twa-customer/app/build/outputs/apk/release/*.apk apks/TuMarca-Cliente-${{ github.event.inputs.version }}.apk 2>/dev/null || true
+          cp twa-driver/app-release-signed.apk apks/TuMarca-Repartidor-${{ github.event.inputs.version }}.apk 2>/dev/null || \
+          cp twa-driver/app/build/outputs/apk/release/*.apk apks/TuMarca-Repartidor-${{ github.event.inputs.version }}.apk 2>/dev/null || true
+          echo "Fingerprint:"
+          cat fingerprint.txt
+          ls -lh apks/
+
+      - name: Upload APKs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tumarca-apks-${{ github.event.inputs.version }}
+          path: |
+            apks/*.apk
+            fingerprint.txt
+          retention-days: 30
+
+      - name: Show fingerprint for assetlinks.json
+        run: |
+          echo ""
+          echo "========================================"
+          echo "COPIA ESTE FINGERPRINT A assetlinks.json"
+          echo "========================================"
+          cat fingerprint.txt
+          echo "========================================"

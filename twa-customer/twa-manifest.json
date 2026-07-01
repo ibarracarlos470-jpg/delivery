@@ -1,0 +1,38 @@
+{
+  "packageId": "ve.tumarca.cliente",
+  "host": "tumarca-ve.vercel.app",
+  "name": "TuMarca — Farmacia Online",
+  "launcherName": "TuMarca",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#00873d",
+  "navigationColor": "#00873d",
+  "navigationColorDark": "#006830",
+  "navigationDividerColor": "#00873d",
+  "navigationDividerColorDark": "#006830",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://tumarca-ve.vercel.app/icon-512.svg",
+  "maskableIconUrl": "https://tumarca-ve.vercel.app/icon-512.svg",
+  "monochromeIconUrl": "https://tumarca-ve.vercel.app/icon-512.svg",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "Mis Pedidos", "short_name": "Pedidos", "url": "/pedidos", "icons": [] },
+    { "name": "Carrito",     "short_name": "Carrito", "url": "/carrito",  "icons": [] }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://tumarca-ve.vercel.app/manifest.json",
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "features": {},
+  "enableSiteSettingsShortcut": true,
+  "minSdkVersion": 19,
+  "targetSdkVersion": 34,
+  "signingKey": {
+    "path": "../android.keystore",
+    "alias": "android"
+  },
+  "fingerprints": []
+}

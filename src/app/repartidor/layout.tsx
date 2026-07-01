@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
+import PWARegister from '@/components/pwa/PWARegister'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { UserButton } from '@clerk/nextjs'
 import { Truck, History, LayoutDashboard } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'TuMarca — Repartidor',
+  manifest: '/manifest-driver.json',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'TuMarca Driver' },
+}
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth()
@@ -13,6 +21,8 @@ export default async function DriverLayout({ children }: { children: React.React
   if (!user || user.role !== 'DRIVER') redirect('/')
 
   return (
+    <>
+    <PWARegister manifest="/manifest-driver.json" />
     <div className="min-h-screen bg-gray-100">
       {/* Top navbar */}
       <header className="bg-orange-500 text-white shadow-sm">
@@ -48,5 +58,6 @@ export default async function DriverLayout({ children }: { children: React.React
         </div>
       </nav>
     </div>
+    </>
   )
 }

@@ -15,6 +15,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/delivery/zones(.*)',
   '/api/bcv(.*)',
   '/api/settings(.*)',
+  '/api/geocode(.*)',
 ])
 
 export const proxy = clerkMiddleware(async (auth, req) => {
