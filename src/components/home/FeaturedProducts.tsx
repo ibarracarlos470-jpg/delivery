@@ -6,12 +6,12 @@ export default async function FeaturedProducts() {
   const [featured, onSale] = await Promise.all([
     prisma.product.findMany({
       where: { featured: true, active: true },
-      include: { brand: { select: { name: true } } },
+      include: { brand: { select: { name: true } }, branch: { select: { city: true, name: true } } },
       take: 8,
     }),
     prisma.product.findMany({
       where: { salePrice: { not: null }, active: true },
-      include: { brand: { select: { name: true } } },
+      include: { brand: { select: { name: true } }, branch: { select: { city: true, name: true } } },
       orderBy: { salePrice: 'asc' },
       take: 4,
     }),
