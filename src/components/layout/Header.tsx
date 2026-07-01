@@ -1,12 +1,12 @@
 'use client'
 import Link from 'next/link'
-import { Search, ShoppingCart, MapPin, Package, User, Tag, Menu, X } from 'lucide-react'
+import { Search, ShoppingCart, Package, User, Tag, Menu, X, LogIn } from 'lucide-react'
 import { UserButton, SignInButton, useUser } from '@clerk/nextjs'
 import { useCartStore } from '@/store/cart'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useExchangeRate } from '@/contexts/ExchangeRateContext'
 import BranchSelector from '@/components/store/BranchSelector'
@@ -16,27 +16,9 @@ export default function Header() {
   const { items } = useCartStore()
   const { rate, at } = useExchangeRate()
   const [query, setQuery] = useState('')
-  const [cityName, setCityName] = useState('Mi ubicación')
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
-
-  useEffect(() => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`
-          )
-          const data = await res.json()
-          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || 'Mi ubicación'
-          setCityName(city)
-        } catch { setCityName('Mi ubicación') }
-      },
-      () => {}
-    )
-  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,12 +48,6 @@ export default function Header() {
               TuMarca
             </Link>
 
-            {/* City — desktop only */}
-            <button className="hidden md:flex items-center gap-1 text-sm text-green-100 shrink-0">
-              <MapPin size={15} />
-              <span className="max-w-[120px] truncate">{cityName}</span>
-            </button>
-
             {/* Ofertas — desktop only */}
             <Link href="/ofertas" className="hidden md:flex items-center gap-1 text-sm font-semibold text-yellow-300 hover:text-yellow-100 shrink-0">
               <Tag size={15} />
@@ -95,19 +71,17 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-3 shrink-0">
               {isSignedIn ? (
                 <>
-                  <Link href="/pedidos" className="flex items-center gap-1 text-sm text-green-100 hover:text-white">
-                    <Package size={16} />Pedidos
-                  </Link>
-                  <Link href="/perfil" className="flex items-center gap-1 text-sm text-green-100 hover:text-white">
-                    <User size={16} />Perfil
+                  <Link href="/pedidos" className="flex items-center gap-1.5 text-sm text-green-100 hover:text-white">
+                    <Package size={16} />Mis pedidos
                   </Link>
                   <UserButton />
                 </>
               ) : (
                 <SignInButton mode="modal">
-                  <Button variant="outline" size="sm" className="border-white text-white hover:bg-green-700">
-                    Ingresar
-                  </Button>
+                  <button className="flex items-center gap-2 bg-white text-[#00873d] font-semibold text-sm px-4 py-2 rounded-full hover:bg-green-50 transition-colors shadow-sm">
+                    <LogIn size={16} />
+                    Iniciar sesión
+                  </button>
                 </SignInButton>
               )}
               {/* Branch selector — top right */}
@@ -126,9 +100,17 @@ export default function Header() {
                   </Badge>
                 )}
               </Link>
-              {/* Mobile: show user button + hamburger */}
+              {/* Mobile: show user button or login icon + hamburger */}
               <div className="flex items-center gap-2 md:hidden">
-                {isSignedIn && <UserButton />}
+                {isSignedIn ? (
+                  <UserButton />
+                ) : (
+                  <SignInButton mode="modal">
+                    <button className="p-1 text-white hover:text-green-100">
+                      <User size={22} />
+                    </button>
+                  </SignInButton>
+                )}
                 <button onClick={() => setMobileOpen(o => !o)} className="text-white p-1">
                   {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                 </button>
@@ -140,8 +122,9 @@ export default function Header() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden bg-[#006b30] border-t border-green-700 px-4 py-3 space-y-1">
-            <div className="flex items-center gap-2 text-sm text-green-200 py-2 border-b border-green-700 mb-2">
-              <MapPin size={14} />{cityName}
+            {/* Branch selector mobile */}
+            <div className="py-2 border-b border-green-700 mb-2">
+              <BranchSelector />
             </div>
             {isSignedIn ? (
               <>
@@ -157,8 +140,9 @@ export default function Header() {
             ) : (
               <SignInButton mode="modal">
                 <button onClick={() => setMobileOpen(false)}
-                  className="w-full mt-2 bg-yellow-400 text-gray-900 font-bold py-2.5 rounded-xl">
-                  Ingresar
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl text-sm">
+                  <LogIn size={18} />
+                  Iniciar sesión / Registrarse
                 </button>
               </SignInButton>
             )}
