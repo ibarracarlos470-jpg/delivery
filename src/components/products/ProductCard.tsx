@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, Plus } from 'lucide-react'
+import { Plus, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useCartStore } from '@/store/cart'
 import { toast } from 'sonner'
@@ -16,6 +16,7 @@ type Product = {
   images: string[]
   stock: number
   brand?: { name: string } | null
+  branch?: { city: string; name: string } | null
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -68,9 +69,17 @@ export default function ProductCard({ product }: { product: Product }) {
 
       {/* Info */}
       <div className="p-3 flex flex-col flex-1 gap-1.5">
-        {product.brand && (
-          <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{product.brand.name}</p>
-        )}
+        <div className="flex items-center justify-between gap-1">
+          {product.brand && (
+            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide truncate">{product.brand.name}</p>
+          )}
+          {product.branch && (
+            <span className="shrink-0 flex items-center gap-0.5 text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full font-medium">
+              <MapPin size={9} />
+              {product.branch.city}
+            </span>
+          )}
+        </div>
         <Link href={`/producto/${product.slug}`}
           className="text-xs sm:text-sm font-medium text-gray-800 hover:text-green-700 line-clamp-2 leading-snug flex-1 transition-colors">
           {product.name}

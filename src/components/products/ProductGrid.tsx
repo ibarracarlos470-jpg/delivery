@@ -9,6 +9,7 @@ type Product = {
   images: string[]
   stock: number
   brand?: { name: string } | null
+  branch?: { city: string; name: string } | null
 }
 
 export default function ProductGrid({ products }: { products: Product[] }) {
