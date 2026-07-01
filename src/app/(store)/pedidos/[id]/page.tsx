@@ -149,8 +149,34 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       {!isCancelled && (
         <div className="bg-white rounded-xl border p-5">
           <h2 className="font-semibold mb-5 text-gray-700">Estado del pedido</h2>
-          <div className="relative">
-            {/* Progress line */}
+
+          {/* Vertical list on mobile, horizontal on sm+ */}
+          <div className="block sm:hidden space-y-3">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon
+              const done = i <= currentStep
+              const active = i === currentStep
+              return (
+                <div key={step.key} className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0 transition-all ${
+                    done ? 'border-green-500 bg-green-500' : 'border-gray-200 bg-white'
+                  } ${active ? 'ring-4 ring-green-100' : ''}`}>
+                    <Icon size={15} className={done ? 'text-white' : 'text-gray-300'} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${done ? 'text-green-700' : 'text-gray-400'}`}>{step.label}</p>
+                    {active && <p className="text-xs text-green-500">Estado actual</p>}
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className={`ml-auto w-1.5 h-1.5 rounded-full ${i < currentStep ? 'bg-green-400' : 'bg-gray-200'}`} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Horizontal — desktop */}
+          <div className="hidden sm:block relative">
             <div className="absolute top-5 left-5 right-5 h-0.5 bg-gray-200">
               <div
                 className="h-full bg-green-500 transition-all duration-500"
@@ -163,7 +189,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 const done = i <= currentStep
                 const active = i === currentStep
                 return (
-                  <div key={step.key} className="flex flex-col items-center gap-2 w-16">
+                  <div key={step.key} className="flex flex-col items-center gap-2 w-20">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all z-10 bg-white ${
                       done ? 'border-green-500 bg-green-500' : 'border-gray-300'
                     } ${active ? 'ring-4 ring-green-100' : ''}`}>
@@ -177,22 +203,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               })}
             </div>
           </div>
-          {order.zone && currentStatus !== 'DELIVERED' && (
-            <p className="text-sm text-gray-500 text-center mt-4">
-              Tiempo estimado: {order.zone.estimatedMin}–{order.zone.estimatedMax} min
-            </p>
-          )}
+
           {order.delivery?.driver && (
             <div className="mt-4 bg-green-50 rounded-lg p-3 flex items-center gap-3">
-              <div className="bg-green-100 rounded-full p-2">
+              <div className="bg-green-100 rounded-full p-2 shrink-0">
                 <Truck size={16} className="text-green-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-green-800">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-green-800 truncate">
                   {order.delivery.driver.name ?? 'Tu repartidor'}
                 </p>
                 {order.delivery.driver.phone && (
-                  <p className="text-xs text-green-600">{order.delivery.driver.phone}</p>
+                  <a href={`tel:${order.delivery.driver.phone}`} className="text-xs text-green-600">
+                    {order.delivery.driver.phone}
+                  </a>
                 )}
               </div>
             </div>

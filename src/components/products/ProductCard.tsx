@@ -70,18 +70,18 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.name}
         </Link>
 
-        <div className="mt-2 flex items-end justify-between">
-          <div>
+        <div className="mt-2 flex items-end justify-between gap-1">
+          <div className="min-w-0">
             {hasDiscount ? (
               <>
-                <p className="text-lg font-bold text-green-700">${product.salePrice!.toFixed(2)}</p>
-                {rate > 0 && <p className="text-xs text-blue-500">{formatBs(product.salePrice!, rate)}</p>}
+                <p className="text-base font-bold text-green-700">${product.salePrice!.toFixed(2)}</p>
+                {rate > 0 && <p className="text-xs text-blue-500 leading-tight truncate">{formatBs(product.salePrice!, rate)}</p>}
                 <p className="text-xs text-gray-400 line-through">${product.price.toFixed(2)}</p>
               </>
             ) : (
               <>
-                <p className="text-lg font-bold text-green-700">${product.price.toFixed(2)}</p>
-                {rate > 0 && <p className="text-xs text-blue-500">{formatBs(product.price, rate)}</p>}
+                <p className="text-base font-bold text-green-700">${product.price.toFixed(2)}</p>
+                {rate > 0 && <p className="text-xs text-blue-500 leading-tight truncate">{formatBs(product.price, rate)}</p>}
               </>
             )}
           </div>
@@ -90,9 +90,9 @@ export default function ProductCard({ product }: { product: Product }) {
             size="sm"
             onClick={handleAdd}
             disabled={product.stock === 0}
-            className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0"
+            className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0 shrink-0"
           >
-            <ShoppingCart size={16} />
+            <ShoppingCart size={15} />
           </Button>
         </div>
 
