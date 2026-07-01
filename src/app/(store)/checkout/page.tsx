@@ -29,10 +29,18 @@ export default function CheckoutPage() {
   const [locating, setLocating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' })
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    if (items.length === 0) router.replace('/carrito')
-  }, [items.length, router])
+    // Wait for Zustand persist to rehydrate from localStorage
+    const unsub = useCartStore.persist.onFinishHydration(() => setHydrated(true))
+    if (useCartStore.persist.hasHydrated()) setHydrated(true)
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (hydrated && items.length === 0) router.replace('/carrito')
+  }, [hydrated, items.length, router])
 
   useEffect(() => {
     if (user) {
@@ -70,6 +78,7 @@ export default function CheckoutPage() {
     )
   }
 
+  if (!hydrated) return null   // wait for cart to load from localStorage
   if (items.length === 0) return null
 
   const subtotal = total()
