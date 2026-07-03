@@ -202,9 +202,14 @@ export default function DriverDashboard() {
                 </div>
 
                 <div className="text-sm text-gray-500">
-                  <p className="font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                    <Package size={13} /> {order.items.reduce((a, i) => a + i.quantity, 0)} productos
-                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="flex items-center gap-1.5 bg-orange-100 text-orange-700 font-bold text-xs px-2.5 py-1.5 rounded-lg">
+                      <Package size={13} /> {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 font-bold text-xs px-2.5 py-1.5 rounded-lg">
+                      {order.items.reduce((a, i) => a + i.quantity, 0)} unidades en total
+                    </span>
+                  </div>
                   <div className="space-y-1.5">
                     {order.items.map((item, i) => (
                       <div key={i} className="bg-white rounded-lg pl-2 pr-3 py-2 border border-orange-100 flex items-stretch gap-2.5">
