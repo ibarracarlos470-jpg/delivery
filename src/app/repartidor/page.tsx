@@ -207,24 +207,32 @@ export default function DriverDashboard() {
                   </p>
                   <div className="space-y-1.5">
                     {order.items.map((item, i) => (
-                      <div key={i} className="bg-white rounded-lg px-3 py-2 border border-orange-100">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-xs font-semibold text-gray-800">{item.product.name}</p>
-                          <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
-                            {item.product.slug}
+                      <div key={i} className="bg-white rounded-lg pl-2 pr-3 py-2 border border-orange-100 flex items-stretch gap-2.5">
+                        <div className="shrink-0 flex flex-col items-center justify-center bg-orange-500 text-white rounded-md w-11 py-1">
+                          <span className="text-lg font-black leading-none">{item.quantity}</span>
+                          <span className="text-[8px] font-bold uppercase leading-none mt-0.5">
+                            {item.quantity === 1 ? 'unidad' : 'unids'}
                           </span>
                         </div>
-                        {item.product.description && (
-                          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
-                            {item.product.description}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-semibold text-gray-800">{item.product.name}</p>
+                            <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
+                              {item.product.slug}
+                            </span>
+                          </div>
+                          {item.product.description && (
+                            <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
+                              {item.product.description}
+                            </p>
+                          )}
+                          <p className="text-[11px] text-gray-500 mt-1">
+                            ${item.unitPrice.toFixed(2)} c/u ={' '}
+                            <span className="font-semibold text-gray-700">
+                              ${(item.quantity * item.unitPrice).toFixed(2)}
+                            </span>
                           </p>
-                        )}
-                        <p className="text-[11px] text-gray-500 mt-1">
-                          {item.quantity} x ${item.unitPrice.toFixed(2)} ={' '}
-                          <span className="font-semibold text-gray-700">
-                            ${(item.quantity * item.unitPrice).toFixed(2)}
-                          </span>
-                        </p>
+                        </div>
                       </div>
                     ))}
                   </div>
