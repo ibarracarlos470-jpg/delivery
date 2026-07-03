@@ -46,7 +46,7 @@ export default async function SuperAdminPage() {
       <div className="bg-white rounded-xl shadow-sm border">
         <div className="p-5 border-b flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">Sedes</h2>
-          <Link href="/super-admin/sedes/nueva"
+          <Link href="/super-admin/sedes?new=1"
             className="text-sm bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700">
             + Nueva sede
           </Link>
@@ -61,7 +61,7 @@ export default async function SuperAdminPage() {
               <div className="flex items-center gap-6 text-sm text-gray-500">
                 <span>{branch._count.orders} pedidos</span>
                 <span>{branch._count.users} usuarios</span>
-                <Link href={`/super-admin/sedes/${branch.id}`}
+                <Link href={`/super-admin/sedes?edit=${branch.id}`}
                   className="text-purple-600 hover:underline font-medium">
                   Gestionar
                 </Link>
@@ -70,7 +70,7 @@ export default async function SuperAdminPage() {
           ))}
           {branchStats.length === 0 && (
             <p className="p-5 text-gray-400 text-sm text-center">
-              No hay sedes. <Link href="/super-admin/sedes/nueva" className="text-purple-600 hover:underline">Crea la primera</Link>
+              No hay sedes. <Link href="/super-admin/sedes?new=1" className="text-purple-600 hover:underline">Crea la primera</Link>
             </p>
           )}
         </div>

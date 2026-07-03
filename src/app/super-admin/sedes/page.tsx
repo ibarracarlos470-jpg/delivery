@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { MapPin, Plus, Pencil, Power, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -63,17 +64,36 @@ function ScheduleEditor({ value, onChange }: { value: Schedule; onChange: (s: Sc
 }
 
 export default function SedesPage() {
+  return (
+    <Suspense>
+      <SedesPageInner />
+    </Suspense>
+  )
+}
+
+function SedesPageInner() {
+  const searchParams = useSearchParams()
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(searchParams.get('new') === '1')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', slug: '', city: '', state: '', address: '', phone: '', email: '', lat: '', lng: '' })
   const [schedule, setSchedule] = useState<Schedule>(DEFAULT_SCHEDULE)
 
   async function load() {
     const res = await fetch('/api/branches')
-    setBranches(await res.json())
+    const data: Branch[] = await res.json()
+    setBranches(data)
     setLoading(false)
+
+    const editId = searchParams.get('edit')
+    if (editId) {
+      const target = data.find(b => b.id === editId)
+      if (target) {
+        setEditingId(editId)
+        setSchedule(target.schedule ?? DEFAULT_SCHEDULE)
+      }
+    }
   }
   useEffect(() => { load() }, [])
 
