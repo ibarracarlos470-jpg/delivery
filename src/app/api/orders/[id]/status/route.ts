@@ -35,7 +35,7 @@ export async function PATCH(
   if (status === 'ON_THE_WAY') deliveryTimestamps.pickedUpAt = now
   if (status === 'DELIVERED') deliveryTimestamps.deliveredAt = now
 
-  const ops: Parameters<typeof prisma.$transaction>[0] = [
+  const ops = [
     prisma.order.update({ where: { id }, data: { status } }),
     prisma.delivery.update({
       where: { orderId: id },
@@ -46,17 +46,16 @@ export async function PATCH(
         ...(driverNote ? { driverNote } : {}),
       },
     }),
+    // When admin confirms a pending order, mark the payment as paid
+    ...(status === 'CONFIRMED'
+      ? [
+          prisma.payment.updateMany({
+            where: { orderId: id, status: 'PENDING' },
+            data: { status: 'PAID', paidAt: now },
+          }),
+        ]
+      : []),
   ]
-
-  // When admin confirms a pending order, mark the payment as paid
-  if (status === 'CONFIRMED') {
-    ops.push(
-      prisma.payment.updateMany({
-        where: { orderId: id, status: 'PENDING' },
-        data: { status: 'PAID', paidAt: now },
-      }) as never
-    )
-  }
 
   const [order] = await prisma.$transaction(ops)
 
