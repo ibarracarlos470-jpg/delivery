@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob'
+import { put, BlobError } from '@vercel/blob'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,10 +12,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Solo administradores' }, { status: 403 })
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ error: 'Blob storage not configured' }, { status: 503 })
-  }
-
   const formData = await req.formData()
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -25,9 +21,15 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.name.split('.').pop() ?? 'jpg'
-  const blob = await put(`product-images/${Date.now()}.${ext}`, file, {
-    access: 'public',
-  })
-
-  return NextResponse.json({ url: blob.url })
+  try {
+    const blob = await put(`product-images/${Date.now()}.${ext}`, file, {
+      access: 'public',
+    })
+    return NextResponse.json({ url: blob.url })
+  } catch (e) {
+    if (e instanceof BlobError) {
+      return NextResponse.json({ error: 'Blob storage not configured' }, { status: 503 })
+    }
+    throw e
+  }
 }
