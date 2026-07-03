@@ -6,7 +6,11 @@ import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
 
-type OrderItem = { quantity: number; product: { name: string } }
+type OrderItem = {
+  quantity: number
+  unitPrice: number
+  product: { name: string; slug: string; description: string | null }
+}
 type Zone = { name: string; estimatedMin: number; estimatedMax: number } | null
 
 type Order = {
@@ -198,14 +202,32 @@ export default function DriverDashboard() {
                 </div>
 
                 <div className="text-sm text-gray-500">
-                  <p className="font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <p className="font-medium text-gray-700 mb-1.5 flex items-center gap-1">
                     <Package size={13} /> {order.items.reduce((a, i) => a + i.quantity, 0)} productos
                   </p>
-                  <ul className="space-y-0.5 pl-5">
+                  <div className="space-y-1.5">
                     {order.items.map((item, i) => (
-                      <li key={i} className="text-xs">x{item.quantity} {item.product.name}</li>
+                      <div key={i} className="bg-white rounded-lg px-3 py-2 border border-orange-100">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-gray-800">{item.product.name}</p>
+                          <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
+                            {item.product.slug}
+                          </span>
+                        </div>
+                        {item.product.description && (
+                          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
+                            {item.product.description}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-gray-500 mt-1">
+                          {item.quantity} x ${item.unitPrice.toFixed(2)} ={' '}
+                          <span className="font-semibold text-gray-700">
+                            ${(item.quantity * item.unitPrice).toFixed(2)}
+                          </span>
+                        </p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">

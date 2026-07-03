@@ -21,7 +21,7 @@ export async function GET() {
       include: {
         zone: true,
         delivery: true,
-        items: { include: { product: { select: { name: true } } } },
+        items: { include: { product: { select: { name: true, slug: true, description: true } } } },
         user: { select: { name: true, phone: true } },
       },
       orderBy: { createdAt: 'asc' },
@@ -35,7 +35,7 @@ export async function GET() {
       include: {
         zone: true,
         delivery: true,
-        items: { include: { product: { select: { name: true } } } },
+        items: { include: { product: { select: { name: true, slug: true, description: true } } } },
         user: { select: { name: true, phone: true } },
       },
       orderBy: { createdAt: 'asc' },
