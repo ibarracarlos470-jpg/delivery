@@ -203,10 +203,10 @@ export default function DriverDashboard() {
 
                 <div className="text-sm text-gray-500">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="flex items-center gap-1.5 bg-orange-100 text-orange-700 font-bold text-xs px-2.5 py-1.5 rounded-lg">
+                    <span className="flex items-center gap-1.5 bg-violet-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-sm">
                       <Package size={13} /> {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 font-bold text-xs px-2.5 py-1.5 rounded-lg">
+                    <span className="flex items-center gap-1.5 bg-pink-600 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-sm">
                       {order.items.reduce((a, i) => a + i.quantity, 0)} unidades en total
                     </span>
                   </div>
