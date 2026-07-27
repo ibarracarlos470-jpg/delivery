@@ -44,6 +44,7 @@ export default function DriverDashboard() {
   const [chatOrderId, setChatOrderId] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activesRef = useRef<Order[]>([])
   const prevAvailableIdsRef = useRef<Set<string> | null>(null)
@@ -78,7 +79,6 @@ export default function DriverDashboard() {
 
   useEffect(() => {
     setMuted(isSoundMuted())
-    unlockAudioContext()
   }, [])
 
   // Use ref to avoid stale closure in GPS interval
@@ -124,6 +124,11 @@ export default function DriverDashboard() {
     }
   }, [])
 
+  function handleEnableAlarm() {
+    unlockAudioContext()
+    setAudioUnlocked(true)
+  }
+
   async function doAction(orderId: string, action: 'accept' | 'pickup' | 'deliver') {
     setActing(orderId + action)
     try {
@@ -161,6 +166,14 @@ export default function DriverDashboard() {
   return (
     <>
       <div className="space-y-5">
+        {!audioUnlocked && (
+          <button
+            onClick={handleEnableAlarm}
+            className="w-full bg-orange-100 border-2 border-orange-300 text-orange-700 font-semibold text-sm rounded-xl py-2.5 flex items-center justify-center gap-2"
+          >
+            <Volume2 size={16} /> Toca para activar el sonido de alertas
+          </button>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-800">Mis Pedidos</h1>

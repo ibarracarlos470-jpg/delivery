@@ -17,16 +17,11 @@ function getAudioContext(): AudioContext | null {
 }
 
 export function unlockAudioContext(): void {
-  if (typeof window === 'undefined') return
-  const unlock = () => {
-    try {
-      getAudioContext()?.resume()
-    } catch {
-      // ignore: unlock is best-effort
-    }
+  try {
+    getAudioContext()?.resume()
+  } catch {
+    // ignore: unlock is best-effort
   }
-  window.addEventListener('click', unlock, { once: true })
-  window.addEventListener('touchstart', unlock, { once: true })
 }
 
 function playTone(ctx: AudioContext, frequency: number, startTime: number, duration: number): void {
