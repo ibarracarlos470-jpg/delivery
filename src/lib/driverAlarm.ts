@@ -66,12 +66,21 @@ function vibrateAlarm(): void {
 
 export function isSoundMuted(): boolean {
   if (typeof window === 'undefined') return false
-  return window.localStorage.getItem(SOUND_MUTED_KEY) === 'true'
+  try {
+    return window.localStorage.getItem(SOUND_MUTED_KEY) === 'true'
+  } catch {
+    // ignore: localStorage may be unavailable (private mode, sandboxed iframe)
+    return false
+  }
 }
 
 export function setSoundMuted(muted: boolean): void {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(SOUND_MUTED_KEY, muted ? 'true' : 'false')
+  try {
+    window.localStorage.setItem(SOUND_MUTED_KEY, muted ? 'true' : 'false')
+  } catch {
+    // ignore: localStorage may be unavailable (private mode, sandboxed iframe)
+  }
 }
 
 export function triggerOrderAlarm(): void {
