@@ -31,7 +31,9 @@ La primera carga de la página nunca dispara alarma (evita sonar apenas se abre 
 
 Se genera con Web Audio API (`AudioContext` + `OscillatorNode`), sin depender de ningún archivo de audio en `public/`: un beep corto de dos tonos ascendentes (~600ms total).
 
-**Desbloqueo de audio:** los navegadores bloquean `AudioContext` hasta la primera interacción del usuario con la página. Se agrega un listener global (`click`/`touchstart`, `{ once: true }`) que llama a `audioContext.resume()` en la primera interacción, sin banner ni prompt visible. Como el repartidor usa la app activamente, para cuando llegue un pedido el contexto ya estará desbloqueado en la gran mayoría de los casos.
+**Desbloqueo de audio (corregido tras QA manual):** los navegadores bloquean `AudioContext` hasta que el usuario interactúa explícitamente. El diseño original asumía un desbloqueo invisible en el primer click/tap en cualquier parte de la página — verificado en manual QA que esto falla en el caso de uso real: el repartidor abre `/repartidor` y deja la pestaña quieta esperando, sin tocar nada, por lo que el desbloqueo nunca ocurre y el beep queda mudo.
+
+Se reemplaza por un botón visible en la parte superior del panel ("🔊 Toca para activar el sonido de alertas"), mostrado mientras el audio no esté desbloqueado. Al tocarlo, se llama a `unlockAudioContext()` (que intenta reproducir/resumir el `AudioContext` compartido) y el botón desaparece. Esto encaja con el flujo real: el repartidor abre la app al empezar su turno y toca una vez para activar las alertas, luego la deja corriendo.
 
 Si `AudioContext` no está disponible o falla (navegador no soportado, error de reproducción), el error se captura en silencio — nunca debe romper el polling.
 
