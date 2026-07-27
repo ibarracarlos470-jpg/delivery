@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { MapPin, Phone, Package, Clock, CheckCircle, Truck, RefreshCw, User, Navigation } from 'lucide-react'
+import { MapPin, Phone, Package, Clock, CheckCircle, Truck, RefreshCw, User, Navigation, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
+import { unlockAudioContext, triggerOrderAlarm, isSoundMuted, setSoundMuted } from '@/lib/driverAlarm'
 
 type OrderItem = {
   quantity: number
@@ -42,15 +43,29 @@ export default function DriverDashboard() {
   const [acting, setActing] = useState<string | null>(null)
   const [chatOrderId, setChatOrderId] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
+  const [muted, setMuted] = useState(false)
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activesRef = useRef<Order[]>([])
+  const prevAvailableIdsRef = useRef<Set<string> | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch('/api/driver/orders')
     const data = await res.json()
     const active = data.active ?? []
+    const availableOrders: Order[] = data.available ?? []
+
+    const currentIds = new Set(availableOrders.map(o => o.id))
+    if (prevAvailableIdsRef.current) {
+      const hasNewOrder = availableOrders.some(o => !prevAvailableIdsRef.current!.has(o.id))
+      if (hasNewOrder) {
+        triggerOrderAlarm()
+        toast.info('🔔 Nuevo pedido disponible')
+      }
+    }
+    prevAvailableIdsRef.current = currentIds
+
     activesRef.current = active
-    setAvailable(data.available ?? [])
+    setAvailable(availableOrders)
     setActives(active)
     setLoading(false)
   }, [])
@@ -60,6 +75,11 @@ export default function DriverDashboard() {
     const interval = setInterval(load, 5000)
     return () => clearInterval(interval)
   }, [load])
+
+  useEffect(() => {
+    setMuted(isSoundMuted())
+    unlockAudioContext()
+  }, [])
 
   // Use ref to avoid stale closure in GPS interval
   const sendLocation = useCallback(() => {
@@ -156,6 +176,17 @@ export default function DriverDashboard() {
                 <Navigation size={11} className="animate-pulse" /> GPS activo
               </span>
             )}
+            <button
+              onClick={() => {
+                const next = !muted
+                setMuted(next)
+                setSoundMuted(next)
+              }}
+              className="text-gray-400 hover:text-orange-500 transition-colors"
+              aria-label={muted ? 'Activar sonido de alarma' : 'Silenciar alarma'}
+            >
+              {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
             <button onClick={load} className="text-gray-400 hover:text-orange-500 transition-colors">
               <RefreshCw size={18} />
             </button>
