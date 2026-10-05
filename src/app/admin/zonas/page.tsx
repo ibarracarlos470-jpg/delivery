@@ -2,11 +2,13 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import { Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import ZoneToggle from './ZoneToggle'
 
 export default async function AdminZonasPage() {
-  const zones = await prisma.deliveryZone.findMany({ orderBy: { deliveryFee: 'asc' } })
+  const scope = branchScope(await requireRole('ADMIN'))
+  const zones = await prisma.deliveryZone.findMany({ where: scope, orderBy: { deliveryFee: 'asc' } })
 
   return (
     <div>

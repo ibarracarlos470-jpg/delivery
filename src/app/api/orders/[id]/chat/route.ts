@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { branchScope } from '@/lib/auth'
 import { z } from 'zod'
 function createId() { return Math.random().toString(36).slice(2) + Date.now().toString(36) }
 
 async function getAuthorizedUser(userId: string, orderId: string) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return null
-  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return user
+  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+    const inScope = await prisma.order.findFirst({ where: { id: orderId, ...branchScope(user) }, select: { id: true } })
+    return inScope ? user : null
+  }
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { delivery: { select: { driverId: true } } },

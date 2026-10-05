@@ -1,13 +1,16 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import Image from 'next/image'
 
 export default async function AdminProductsPage() {
+  const scope = branchScope(await requireRole('ADMIN'))
   const products = await prisma.product.findMany({
+    where: scope,
     include: { category: { select: { name: true } }, brand: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
   })

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import { MapPin, User, Truck, Clock, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react'
 import AdminOrderActions from './AdminOrderActions'
 
@@ -26,10 +27,11 @@ const METHOD_COLOR: Record<string, string> = {
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const scope = branchScope(await requireRole('ADMIN'))
 
   const [order, drivers] = await Promise.all([
-    prisma.order.findUnique({
-      where: { id },
+    prisma.order.findFirst({
+      where: { id, ...scope },
       include: {
         user: { select: { name: true, email: true, phone: true } },
         zone: true,

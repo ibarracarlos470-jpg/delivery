@@ -1,15 +1,17 @@
 'use server'
-import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import { Prisma } from '@/generated/prisma/client'
 import { revalidatePath } from 'next/cache'
 
 async function requireAdmin() {
-  const { userId } = await auth()
-  if (!userId) throw new Error('No autorizado')
-  const user = await prisma.user.findUnique({ where: { clerkId: userId } })
-  if (!user || user.role !== 'ADMIN') throw new Error('Solo administradores')
-  return user
+  return requireRole('ADMIN')
+}
+
+// Throws unless the product exists within the admin's branch scope
+async function assertProductInScope(admin: Awaited<ReturnType<typeof requireAdmin>>, id: string) {
+  const product = await prisma.product.findFirst({ where: { id, ...branchScope(admin) }, select: { id: true } })
+  if (!product) throw new Error('Producto no encontrado')
 }
 
 export type ProductInput = {
@@ -33,6 +35,7 @@ export async function upsertProduct(data: ProductInput): Promise<{ error?: strin
 
   try {
     if (id) {
+      await assertProductInScope(admin, id)
       await prisma.product.update({ where: { id }, data: rest })
     } else {
       await prisma.product.create({ data: { ...rest, branchId: admin.branchId } })
@@ -49,7 +52,8 @@ export async function upsertProduct(data: ProductInput): Promise<{ error?: strin
 }
 
 export async function deleteProduct(id: string) {
-  await requireAdmin()
+  const admin = await requireAdmin()
+  await assertProductInScope(admin, id)
 
   const orderCount = await prisma.orderItem.count({ where: { productId: id } })
   if (orderCount > 0) {

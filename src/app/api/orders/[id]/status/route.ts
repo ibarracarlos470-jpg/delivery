@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { branchScope } from '@/lib/auth'
 import { z } from 'zod'
 
 const StatusSchema = z.object({
@@ -28,6 +29,16 @@ export async function PATCH(
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
 
   const { status, driverId, driverNote } = parsed.data
+
+  const current = await prisma.order.findFirst({
+    where: { id, ...branchScope(user) },
+    select: { status: true, items: { select: { productId: true, quantity: true } } },
+  })
+  if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Cancelling returns stock; reopening would need to take it again, so it's final
+  if (current.status === 'CANCELLED') {
+    return NextResponse.json({ error: 'El pedido está cancelado' }, { status: 409 })
+  }
 
   if (driverId) {
     const driver = await prisma.user.findUnique({ where: { id: driverId }, select: { role: true } })
@@ -62,6 +73,15 @@ export async function PATCH(
             data: { status: 'PAID', paidAt: now },
           }),
         ]
+      : []),
+    // Give back the stock reserved when the order was placed
+    ...(status === 'CANCELLED'
+      ? current.items.map(item =>
+          prisma.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          })
+        )
       : []),
   ]
 

@@ -10,16 +10,16 @@ android {
         applicationId = "ve.tumarca.cliente"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+        versionName = System.getenv("VERSION_NAME")?.takeIf { it.isNotBlank() } ?: "1.0.0"
     }
 
     signingConfigs {
         create("release") {
             storeFile = file("../../android.keystore")
-            storePassword = "tumarca2024"
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
             keyAlias = "android"
-            keyPassword = "tumarca2024"
+            keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
         }
     }
 

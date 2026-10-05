@@ -11,6 +11,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      # versionCode must grow with each release so Android accepts the update
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: ${{ github.event.inputs.version }}
 
     steps:
       - name: Checkout
@@ -29,18 +34,21 @@ jobs:
           ls /tmp/gradle-8.5/bin/
           echo "GRADLE=/tmp/gradle-8.5/bin/gradle" >> $GITHUB_ENV
 
-      - name: Generate keystore
+      # The same key must sign every release: Android refuses updates signed with a
+      # different key, and assetlinks.json pins its SHA-256 fingerprint
+      - name: Restore signing keystore
         run: |
-          keytool -genkeypair -v \
-            -keystore android.keystore \
-            -alias android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass tumarca2024 -keypass tumarca2024 \
-            -dname "CN=TuMarca,OU=Dev,O=TuMarca,L=Caracas,S=Miranda,C=VE"
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "::error::Faltan los secrets ANDROID_KEYSTORE_BASE64 y ANDROID_KEYSTORE_PASSWORD (ver README, seccion APKs)"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android.keystore
           keytool -list -v -keystore android.keystore -alias android \
-            -storepass tumarca2024 2>/dev/null \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" 2>/dev/null \
             | grep "SHA256:" | awk '{print $2}' > fingerprint.txt
           echo "Fingerprint: $(cat fingerprint.txt)"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Generate launcher icons (Python)
         run: |

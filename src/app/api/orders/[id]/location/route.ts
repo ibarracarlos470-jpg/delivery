@@ -17,13 +17,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { orderId: id },
     select: {
       driverLat: true, driverLng: true, locationAt: true, status: true,
-      driverId: true, order: { select: { userId: true } },
+      driverId: true, order: { select: { userId: true, branchId: true } },
     },
   })
 
   if (!delivery) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
 
-  const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'
+  const isAdmin =
+    user.role === 'SUPER_ADMIN' ||
+    (user.role === 'ADMIN' &&
+      (!user.branchId || !delivery.order.branchId || delivery.order.branchId === user.branchId))
   const isOwner = delivery.order.userId === user.id
   const isDriver = delivery.driverId === user.id
   if (!isAdmin && !isOwner && !isDriver) {

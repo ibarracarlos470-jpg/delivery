@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import {
   Package, ShoppingBag, Users, DollarSign,
   Truck, Clock, CheckCircle, XCircle, ChevronRight, TrendingUp,
@@ -11,6 +12,7 @@ export default async function AdminDashboard() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const scope = branchScope(await requireRole('ADMIN'))
 
   const [
     totalProducts,
@@ -22,22 +24,24 @@ export default async function AdminDashboard() {
     recentOrders,
     topProducts,
   ] = await Promise.all([
-    prisma.product.count({ where: { active: true } }),
+    prisma.product.count({ where: { active: true, ...scope } }),
     prisma.user.count(),
     prisma.order.aggregate({
       _sum: { total: true },
-      where: { status: { not: 'CANCELLED' } },
+      where: { status: { not: 'CANCELLED' }, ...scope },
     }),
     prisma.order.aggregate({
       _sum: { total: true },
-      where: { status: { not: 'CANCELLED' }, createdAt: { gte: thisMonth } },
+      where: { status: { not: 'CANCELLED' }, createdAt: { gte: thisMonth }, ...scope },
     }),
-    prisma.order.count({ where: { createdAt: { gte: today } } }),
+    prisma.order.count({ where: { createdAt: { gte: today }, ...scope } }),
     prisma.order.groupBy({
       by: ['status'],
+      where: scope,
       _count: { id: true },
     }),
     prisma.order.findMany({
+      where: scope,
       take: 8,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -48,6 +52,7 @@ export default async function AdminDashboard() {
     }),
     prisma.orderItem.groupBy({
       by: ['productId'],
+      where: { order: scope },
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: 'desc' } },
       take: 5,

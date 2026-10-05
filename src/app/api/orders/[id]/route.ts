@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { branchScope } from '@/lib/auth'
+import type { Role } from '@/generated/prisma/client'
 
-function accessFilter(user: { id: string; role: string }) {
-  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return {}
+function accessFilter(user: { id: string; role: Role; branchId: string | null }) {
+  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return branchScope(user)
   if (user.role === 'DRIVER') {
     return {
       OR: [

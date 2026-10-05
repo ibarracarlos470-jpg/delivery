@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import { Badge } from '@/components/ui/badge'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -23,7 +24,9 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export default async function AdminOrdersPage() {
+  const scope = branchScope(await requireRole('ADMIN'))
   const orders = await prisma.order.findMany({
+    where: scope,
     include: {
       user: { select: { name: true, email: true } },
       zone: { select: { name: true } },

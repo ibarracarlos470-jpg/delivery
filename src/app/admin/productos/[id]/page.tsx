@@ -4,12 +4,14 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import ProductForm from '../ProductForm'
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const scope = branchScope(await requireRole('ADMIN'))
   const [product, categories, brands] = await Promise.all([
-    prisma.product.findUnique({ where: { id } }),
+    prisma.product.findFirst({ where: { id, ...scope } }),
     prisma.category.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
     prisma.brand.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
