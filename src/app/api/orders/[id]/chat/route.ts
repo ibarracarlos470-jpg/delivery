@@ -7,7 +7,7 @@ function createId() { return Math.random().toString(36).slice(2) + Date.now().to
 async function getAuthorizedUser(userId: string, orderId: string) {
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
   if (!user) return null
-  if (user.role === 'ADMIN') return user
+  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return user
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { delivery: { select: { driverId: true } } },

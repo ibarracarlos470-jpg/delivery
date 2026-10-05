@@ -17,7 +17,8 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'DRIVER' && user.role !== 'SUPER_ADMIN')) {
+  // Drivers advance their own deliveries through /api/driver/orders/[id]
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -27,6 +28,13 @@ export async function PATCH(
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 400 })
 
   const { status, driverId, driverNote } = parsed.data
+
+  if (driverId) {
+    const driver = await prisma.user.findUnique({ where: { id: driverId }, select: { role: true } })
+    if (driver?.role !== 'DRIVER') {
+      return NextResponse.json({ error: 'Repartidor inválido' }, { status: 400 })
+    }
+  }
 
   const now = new Date()
   const deliveryTimestamps: Record<string, Date> = {}

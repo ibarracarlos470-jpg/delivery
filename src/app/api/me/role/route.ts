@@ -5,6 +5,12 @@ import { prisma } from '@/lib/prisma'
 const VALID_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DRIVER', 'CUSTOMER'] as const
 
 export async function POST(req: Request) {
+  // Self-service role switching is a development tool only; in production any
+  // signed-in user could otherwise grant themselves SUPER_ADMIN
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'No disponible' }, { status: 403 })
+  }
+
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
