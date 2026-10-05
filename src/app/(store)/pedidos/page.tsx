@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
-import { Package, ChevronRight, Clock } from 'lucide-react'
+import { Package, ChevronRight, Clock, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -13,6 +13,7 @@ type Order = {
   createdAt: string
   items: Array<{ quantity: number; product: { name: string } }>
   delivery: { status: string } | null
+  rating: { rating: number } | null
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -97,6 +98,15 @@ export default function OrdersPage() {
                       <Clock size={12} />
                       {new Date(order.createdAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                     </span>
+                    {status === 'DELIVERED' && (order.rating ? (
+                      <span className="text-xs text-amber-600 flex items-center gap-0.5">
+                        <Star size={12} className="fill-amber-400 text-amber-400" /> {order.rating.rating}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                        Califica tu delivery
+                      </span>
+                    ))}
                   </div>
                   <p className="text-sm text-gray-700 line-clamp-1">
                     {firstItem}{itemCount > 1 ? ` y ${itemCount - 1} más` : ''}

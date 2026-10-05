@@ -4,11 +4,13 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
 import ZoneForm from '../../ZoneForm'
 
 export default async function EditZonePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const zone = await prisma.deliveryZone.findUnique({ where: { id } })
+  const scope = branchScope(await requireRole('ADMIN'))
+  const zone = await prisma.deliveryZone.findFirst({ where: { id, ...scope } })
   if (!zone) notFound()
 
   return (

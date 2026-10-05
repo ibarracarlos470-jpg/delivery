@@ -10,12 +10,29 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
 
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } })
+  if (!user) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
+
   const delivery = await prisma.delivery.findUnique({
     where: { orderId: id },
-    select: { driverLat: true, driverLng: true, locationAt: true, status: true },
+    select: {
+      driverLat: true, driverLng: true, locationAt: true, status: true,
+      driverId: true, order: { select: { userId: true, branchId: true } },
+    },
   })
 
   if (!delivery) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
 
-  return NextResponse.json(delivery)
+  const isAdmin =
+    user.role === 'SUPER_ADMIN' ||
+    (user.role === 'ADMIN' &&
+      (!user.branchId || !delivery.order.branchId || delivery.order.branchId === user.branchId))
+  const isOwner = delivery.order.userId === user.id
+  const isDriver = delivery.driverId === user.id
+  if (!isAdmin && !isOwner && !isDriver) {
+    return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
+  }
+
+  const { driverLat, driverLng, locationAt, status } = delivery
+  return NextResponse.json({ driverLat, driverLng, locationAt, status })
 }

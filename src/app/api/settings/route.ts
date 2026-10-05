@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } })
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
     return NextResponse.json({ error: 'Solo administradores' }, { status: 403 })
   }
 

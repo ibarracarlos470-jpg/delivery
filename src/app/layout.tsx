@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="es">
         <body className={inter.className}>
           <Providers>{children}</Providers>
-          <RoleSwitcher />
+          {process.env.NODE_ENV !== 'production' && <RoleSwitcher />}
           <PWARegister />
         </body>
       </html>

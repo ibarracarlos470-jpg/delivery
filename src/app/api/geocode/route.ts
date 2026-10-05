@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const lat = searchParams.get('lat')
-  const lon = searchParams.get('lon')
+  const lat = Number(searchParams.get('lat'))
+  const lon = Number(searchParams.get('lon'))
 
-  if (!lat || !lon) return NextResponse.json({ error: 'lat/lon required' }, { status: 400 })
+  if (!searchParams.get('lat') || !searchParams.get('lon') ||
+      !Number.isFinite(lat) || !Number.isFinite(lon) ||
+      Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+    return NextResponse.json({ error: 'lat/lon required' }, { status: 400 })
+  }
 
   try {
     const res = await fetch(

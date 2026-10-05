@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { branchScope } from '@/lib/auth'
+import type { Role } from '@/generated/prisma/client'
+
+function accessFilter(user: { id: string; role: Role; branchId: string | null }) {
+  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return branchScope(user)
+  if (user.role === 'DRIVER') {
+    return {
+      OR: [
+        { delivery: { driverId: user.id } },
+        // Same set the driver sees as "available" in /api/driver/orders
+        { status: { in: ['CONFIRMED' as const, 'PREPARING' as const] }, delivery: { driverId: null } },
+      ],
+    }
+  }
+  return { userId: user.id }
+}
 
 export async function GET(
   _req: NextRequest,
@@ -16,12 +32,13 @@ export async function GET(
   const order = await prisma.order.findFirst({
     where: {
       id,
-      ...(user.role !== 'ADMIN' && user.role !== 'DRIVER' ? { userId: user.id } : {}),
+      ...accessFilter(user),
     },
     include: {
       items: { include: { product: { select: { name: true, images: true, slug: true } } } },
       payment: true,
       zone: true,
+      rating: { select: { rating: true, comment: true, createdAt: true } },
       delivery: {
         include: { driver: { select: { name: true, phone: true } } },
       },

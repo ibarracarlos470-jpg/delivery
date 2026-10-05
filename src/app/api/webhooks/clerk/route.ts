@@ -32,12 +32,13 @@ export async function POST(req: Request) {
   }
 
   if (evt.type === 'user.created') {
-    await prisma.user.create({
-      data: {
-        clerkId: evt.data.id,
-        email: evt.data.email_addresses[0].email_address,
-        name: `${evt.data.first_name ?? ''} ${evt.data.last_name ?? ''}`.trim() || null,
-      },
+    // The user may already exist if they placed an order before this webhook arrived
+    const email = evt.data.email_addresses[0]?.email_address ?? ''
+    const name = `${evt.data.first_name ?? ''} ${evt.data.last_name ?? ''}`.trim() || null
+    await prisma.user.upsert({
+      where: { clerkId: evt.data.id },
+      create: { clerkId: evt.data.id, email, name },
+      update: {},
     })
   }
 

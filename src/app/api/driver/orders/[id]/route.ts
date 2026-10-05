@@ -44,18 +44,29 @@ export async function POST(
     if (activeCount >= 3) {
       return NextResponse.json({ error: 'Tienes 3 pedidos activos. Entrega uno antes de aceptar otro.' }, { status: 409 })
     }
-    await prisma.$transaction([
-      prisma.order.update({ where: { id }, data: { status: 'PREPARING' } }),
-      prisma.delivery.update({
-        where: { orderId: id },
+    // Claim atomically: the driverId: null condition makes a concurrent accept
+    // by another driver update zero rows instead of overwriting this one
+    const claimed = await prisma.$transaction(async tx => {
+      const { count } = await tx.delivery.updateMany({
+        where: {
+          orderId: id,
+          driverId: null,
+          order: { status: { in: ['CONFIRMED', 'PREPARING'] } },
+        },
         data: {
           driverId: user.id,
           status: 'PREPARING',
           preparedAt: now,
           ...(driverNote ? { driverNote } : {}),
         },
-      }),
-    ])
+      })
+      if (count === 0) return false
+      await tx.order.update({ where: { id }, data: { status: 'PREPARING' } })
+      return true
+    })
+    if (!claimed) {
+      return NextResponse.json({ error: 'El pedido ya no está disponible' }, { status: 409 })
+    }
   }
 
   if (action === 'pickup') {

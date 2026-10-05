@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { requireRole, branchScope } from '@/lib/auth'
+import StarRating from '@/components/orders/StarRating'
 import {
   Package, ShoppingBag, Users, DollarSign,
   Truck, Clock, CheckCircle, XCircle, ChevronRight, TrendingUp,
@@ -11,6 +13,7 @@ export default async function AdminDashboard() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const scope = branchScope(await requireRole('ADMIN'))
 
   const [
     totalProducts,
@@ -22,22 +25,24 @@ export default async function AdminDashboard() {
     recentOrders,
     topProducts,
   ] = await Promise.all([
-    prisma.product.count({ where: { active: true } }),
+    prisma.product.count({ where: { active: true, ...scope } }),
     prisma.user.count(),
     prisma.order.aggregate({
       _sum: { total: true },
-      where: { status: { not: 'CANCELLED' } },
+      where: { status: { not: 'CANCELLED' }, ...scope },
     }),
     prisma.order.aggregate({
       _sum: { total: true },
-      where: { status: { not: 'CANCELLED' }, createdAt: { gte: thisMonth } },
+      where: { status: { not: 'CANCELLED' }, createdAt: { gte: thisMonth }, ...scope },
     }),
-    prisma.order.count({ where: { createdAt: { gte: today } } }),
+    prisma.order.count({ where: { createdAt: { gte: today }, ...scope } }),
     prisma.order.groupBy({
       by: ['status'],
+      where: scope,
       _count: { id: true },
     }),
     prisma.order.findMany({
+      where: scope,
       take: 8,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -48,6 +53,7 @@ export default async function AdminDashboard() {
     }),
     prisma.orderItem.groupBy({
       by: ['productId'],
+      where: { order: scope },
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: 'desc' } },
       take: 5,
@@ -59,6 +65,36 @@ export default async function AdminDashboard() {
     where: { id: { in: productIds } },
     select: { id: true, name: true },
   })
+
+  const ratingWhere = { order: scope }
+  const [ratingStats, ratingDist, driverRatings, recentRatings] = await Promise.all([
+    prisma.deliveryRating.aggregate({ where: ratingWhere, _avg: { rating: true }, _count: { rating: true } }),
+    prisma.deliveryRating.groupBy({ by: ['rating'], where: ratingWhere, _count: { rating: true } }),
+    prisma.deliveryRating.groupBy({
+      by: ['driverId'],
+      where: { ...ratingWhere, driverId: { not: null } },
+      _avg: { rating: true },
+      _count: { rating: true },
+      orderBy: { _avg: { rating: 'desc' } },
+      take: 5,
+    }),
+    prisma.deliveryRating.findMany({
+      where: ratingWhere,
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        user: { select: { name: true, email: true } },
+        driver: { select: { name: true } },
+      },
+    }),
+  ])
+  const driverNames = await prisma.user.findMany({
+    where: { id: { in: driverRatings.map(d => d.driverId!) } },
+    select: { id: true, name: true, email: true },
+  })
+  const ratingCount = ratingStats._count.rating
+  const distMap: Record<number, number> = {}
+  for (const d of ratingDist) distMap[d.rating] = d._count.rating
 
   const statusMap: Record<string, number> = {}
   for (const s of ordersByStatus) statusMap[s.status] = s._count.id
@@ -203,6 +239,84 @@ export default async function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Delivery service ratings */}
+      <div className="bg-white rounded-xl shadow-sm p-5">
+        <h2 className="font-semibold text-gray-700 mb-4">Evaluación del servicio de delivery</h2>
+        {ratingCount === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Aún no hay evaluaciones de clientes</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Average + distribution */}
+            <div>
+              <div className="flex items-end gap-2 mb-1">
+                <p className="text-4xl font-black text-gray-800">{(ratingStats._avg.rating ?? 0).toFixed(1)}</p>
+                <p className="text-sm text-gray-400 mb-1">/ 5</p>
+              </div>
+              <StarRating value={ratingStats._avg.rating ?? 0} size={18} />
+              <p className="text-xs text-gray-400 mt-1">{ratingCount} evaluaciones</p>
+              <div className="space-y-1.5 mt-4">
+                {[5, 4, 3, 2, 1].map(n => {
+                  const count = distMap[n] ?? 0
+                  return (
+                    <div key={n} className="flex items-center gap-2 text-xs">
+                      <span className="w-3 text-gray-500">{n}</span>
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-400 rounded-full"
+                          style={{ width: `${Math.round((count / ratingCount) * 100)}%` }} />
+                      </div>
+                      <span className="w-6 text-right text-gray-400">{count}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Per-driver averages */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-3">Repartidores mejor evaluados</h3>
+              {driverRatings.length === 0 ? (
+                <p className="text-sm text-gray-400">Sin datos</p>
+              ) : (
+                <div className="space-y-2">
+                  {driverRatings.map(d => {
+                    const driver = driverNames.find(u => u.id === d.driverId)
+                    return (
+                      <div key={d.driverId} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700 truncate">{driver?.name ?? driver?.email ?? 'Repartidor'}</span>
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <StarRating value={d._avg.rating ?? 0} size={12} />
+                          <span className="font-semibold">{(d._avg.rating ?? 0).toFixed(1)}</span>
+                          <span className="text-xs text-gray-400">({d._count.rating})</span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Latest ratings */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-3">Últimas evaluaciones</h3>
+              <div className="space-y-3">
+                {recentRatings.map(r => (
+                  <Link key={r.id} href={`/admin/pedidos/${r.orderId}`} className="block hover:bg-gray-50 rounded-lg -mx-2 px-2 py-1">
+                    <div className="flex items-center justify-between">
+                      <StarRating value={r.rating} size={12} />
+                      <span className="font-mono text-xs text-gray-400">#{r.orderId.slice(-6).toUpperCase()}</span>
+                    </div>
+                    {r.comment && <p className="text-xs text-gray-600 italic line-clamp-2 mt-0.5">“{r.comment}”</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {r.user.name ?? r.user.email}{r.driver?.name ? ` → ${r.driver.name}` : ''}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recent orders */}
