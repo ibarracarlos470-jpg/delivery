@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { requireRole, branchScope } from '@/lib/auth'
 import { MapPin, User, Truck, Clock, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react'
 import AdminOrderActions from './AdminOrderActions'
+import StarRating, { RATING_LABELS } from '@/components/orders/StarRating'
 
 const METHOD_LABEL: Record<string, string> = {
   CASH: 'Efectivo',
@@ -38,6 +39,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         delivery: { include: { driver: { select: { id: true, name: true } } } },
         items: { include: { product: { select: { name: true, images: true } } } },
         payment: true,
+        rating: true,
       },
     }),
     prisma.user.findMany({ where: { role: 'DRIVER' }, select: { id: true, name: true } }),
@@ -67,6 +69,21 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         currentDriverId={order.delivery?.driverId ?? null}
         drivers={drivers}
       />
+
+      {/* Customer's delivery rating */}
+      {order.rating && (
+        <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
+          <h2 className="font-semibold text-gray-700 mb-2">Evaluación del cliente</h2>
+          <div className="flex items-center gap-2">
+            <StarRating value={order.rating.rating} size={18} />
+            <span className="text-sm text-gray-600">{RATING_LABELS[order.rating.rating]}</span>
+            <span className="text-xs text-gray-400 ml-auto">
+              {order.rating.createdAt.toLocaleDateString('es-VE', { dateStyle: 'medium' })}
+            </span>
+          </div>
+          {order.rating.comment && <p className="text-sm text-gray-700 mt-2 italic">“{order.rating.comment}”</p>}
+        </div>
+      )}
 
       {/* Payment verification */}
       {payment && payment.method !== 'CASH' && (

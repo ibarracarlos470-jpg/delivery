@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { CheckCircle, Clock, Package } from 'lucide-react'
+import StarRating from '@/components/orders/StarRating'
 
 type CompletedOrder = {
   id: string
@@ -9,17 +10,22 @@ type CompletedOrder = {
   zone: { name: string } | null
   delivery: { deliveredAt: string | null } | null
   items: { quantity: number }[]
+  rating: { rating: number; comment: string | null } | null
 }
 
 export default function DriverHistorialPage() {
   const [history, setHistory] = useState<CompletedOrder[]>([])
   const [loading, setLoading] = useState(true)
+  const [ratingAverage, setRatingAverage] = useState<number | null>(null)
+  const [ratingCount, setRatingCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/driver/orders')
       .then(r => r.json())
       .then(data => {
         setHistory(data.history ?? [])
+        setRatingAverage(data.ratingAverage ?? null)
+        setRatingCount(data.ratingCount ?? 0)
         setLoading(false)
       })
   }, [])
@@ -53,6 +59,22 @@ export default function DriverHistorialPage() {
         </div>
       </div>
 
+      <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-amber-700">Calificación de clientes</p>
+          <p className="text-2xl font-black text-amber-600">
+            {ratingAverage != null ? ratingAverage.toFixed(1) : '—'}
+            <span className="text-sm font-medium text-amber-500"> / 5</span>
+          </p>
+        </div>
+        <div className="text-right">
+          <StarRating value={ratingAverage ?? 0} size={18} />
+          <p className="text-xs text-amber-600 mt-1">
+            {ratingCount} {ratingCount === 1 ? 'evaluación' : 'evaluaciones'}
+          </p>
+        </div>
+      </div>
+
       {/* List */}
       {history.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center">
@@ -78,6 +100,14 @@ export default function DriverHistorialPage() {
                     : '—'}
                   {order.zone && ` · ${order.zone.name}`}
                 </p>
+                {order.rating && (
+                  <div className="mt-1">
+                    <StarRating value={order.rating.rating} size={13} />
+                    {order.rating.comment && (
+                      <p className="text-xs text-gray-500 italic line-clamp-2 mt-0.5">“{order.rating.comment}”</p>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-right shrink-0">
                 <p className="font-bold text-green-700 text-sm">${order.total.toFixed(2)}</p>

@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const [available, active, history] = await Promise.all([
+  const [available, active, history, ratingStats] = await Promise.all([
     // Orders ready to be picked up (no driver assigned yet)
     prisma.order.findMany({
       where: {
@@ -51,11 +51,25 @@ export async function GET() {
         zone: { select: { name: true } },
         delivery: { select: { deliveredAt: true } },
         items: { select: { quantity: true } },
+        rating: { select: { rating: true, comment: true } },
       },
       orderBy: { updatedAt: 'desc' },
       take: 20,
     }),
+    // Average over all of the driver's ratings, not just the last 20 deliveries
+    prisma.deliveryRating.aggregate({
+      where: { driverId: user.id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    }),
   ])
 
-  return NextResponse.json({ available, active, history, activeCount: active.length })
+  return NextResponse.json({
+    available,
+    active,
+    history,
+    activeCount: active.length,
+    ratingAverage: ratingStats._avg.rating,
+    ratingCount: ratingStats._count.rating,
+  })
 }

@@ -38,6 +38,7 @@ export async function GET(
       items: { include: { product: { select: { name: true, images: true, slug: true } } } },
       payment: true,
       zone: true,
+      rating: { select: { rating: true, comment: true, createdAt: true } },
       delivery: {
         include: { driver: { select: { name: true, phone: true } } },
       },

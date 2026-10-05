@@ -78,6 +78,8 @@ model User {
   orders       Order[]
   deliveries   Delivery[]
   chatMessages ChatMessage[]
+  ratingsGiven    DeliveryRating[] @relation("RatingAuthor")
+  ratingsReceived DeliveryRating[] @relation("RatingDriver")
 }
 
 model Category {
@@ -180,6 +182,7 @@ model Order {
   payment      Payment?
   delivery     Delivery?
   chatMessages ChatMessage[]
+  rating       DeliveryRating?
 }
 
 model OrderItem {
@@ -237,6 +240,23 @@ model ChatMessage {
 
   order  Order @relation(fields: [orderId], references: [id])
   sender User  @relation(fields: [senderId], references: [id])
+}
+
+// Customer's evaluation of the delivery service, one per delivered order
+model DeliveryRating {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  userId    String
+  driverId  String?
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user   User  @relation("RatingAuthor", fields: [userId], references: [id])
+  driver User? @relation("RatingDriver", fields: [driverId], references: [id])
+
+  @@index([driverId])
 }
 
 model Banner {

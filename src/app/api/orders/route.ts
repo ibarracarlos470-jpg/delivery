@@ -178,6 +178,7 @@ export async function GET() {
       payment: true,
       zone: true,
       delivery: true,
+      rating: { select: { rating: true } },
     },
     orderBy: { createdAt: 'desc' },
   })

@@ -55,3 +55,14 @@ base64 -w0 android.keystore > android.keystore.b64
    - `ANDROID_KEYSTORE_PASSWORD`: la contraseña que elegiste
 2. Guarda `android.keystore` y la contraseña en un lugar seguro (sin ellos no podrás publicar actualizaciones). No la subas al repo.
 3. Ejecuta el workflow y copia el valor de `fingerprint.txt` en `sha256_cert_fingerprints` de `public/.well-known/assetlinks.json`.
+
+## Evaluación del delivery
+
+Los clientes califican el servicio (1 a 5 estrellas y un comentario opcional) cuando su pedido está entregado.
+El repartidor ve su promedio en **Historial**; el admin, en el **Dashboard** y en el detalle de cada pedido.
+
+Para crear la tabla en la base de datos (una sola vez):
+
+```bash
+npx tsx prisma/migrate-ratings.ts
+```

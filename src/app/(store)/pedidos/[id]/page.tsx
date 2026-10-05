@@ -7,6 +7,7 @@ import { Package, CheckCircle, Clock, Truck, MapPin, User, Phone, ChevronLeft } 
 import { Button } from '@/components/ui/button'
 import { useUser } from '@clerk/nextjs'
 import OrderChat from '@/components/chat/OrderChat'
+import DeliveryRatingCard from '@/components/orders/DeliveryRatingCard'
 import { toast } from 'sonner'
 import { useExchangeRate, formatBs } from '@/contexts/ExchangeRateContext'
 
@@ -38,6 +39,7 @@ type OrderDetail = {
     product: { name: string; images: string[]; slug: string }
   }>
   payment: { method: string; status: string; amount: number } | null
+  rating: { rating: number; comment: string | null } | null
 }
 
 const STEPS = [
@@ -266,6 +268,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
         </div>
+      )}
+
+      {currentStatus === 'DELIVERED' && (
+        <DeliveryRatingCard orderId={order.id} existing={order.rating} />
       )}
 
       {isCancelled && (
